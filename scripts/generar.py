@@ -19,10 +19,16 @@ import argparse
 import html
 import json
 import shutil
+from datetime import date
 import sys
 from pathlib import Path
 
 RAIZ = Path(__file__).resolve().parent.parent
+
+# Dónde está publicada. Hace falta entera —no relativa— porque las tarjetas de WhatsApp,
+# Facebook y Google piden la dirección completa de la imagen. Si el sitio se muda al dominio
+# de la empresa, se corre con --url https://montelago.condominiosvillacasa.com/
+PUBLICA = 'https://areatech-cmd.github.io/montelago-web/'
 
 
 def esc(s):
@@ -38,6 +44,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--tour', default=str(RAIZ.parent / 'WEB3D'), help='carpeta del tour')
+    ap.add_argument('--url', default=PUBLICA,
+                    help='dirección donde se publica (para og:image, canonical y sitemap)')
     args = ap.parse_args()
 
     tour = Path(args.tour)
@@ -96,6 +104,41 @@ def main():
     wa = (c.get('whatsAppNumber') or '').replace(' ', '').replace('+', '')
     correo = c.get('email', '')
 
+    # --- Lo que necesitan los buscadores y las tarjetas de los enlaces ---
+    base = args.url if args.url.endswith('/') else args.url + '/'
+    loc = p.get('location', {})
+    ficha = {
+        '@context': 'https://schema.org',
+        '@type': 'Place',
+        'name': loc.get('title') or proyecto['name'],
+        'description': proyecto['description'],
+        'url': base,
+        'image': base + 'assets/img/tarjeta-og.jpg',
+        'address': {'@type': 'PostalAddress', 'streetAddress': loc.get('address', ''),
+                    'addressLocality': 'Tumán', 'addressRegion': 'Lambayeque',
+                    'addressCountry': 'PE'},
+        'telephone': proyecto.get('contact', {}).get('whatsAppNumber', ''),
+        'isicV4': '6810',
+    }
+    if loc.get('latLng'):
+        ficha['geo'] = {'@type': 'GeoCoordinates',
+                        'latitude': loc['latLng'][0], 'longitude': loc['latLng'][1]}
+    dev = proyecto.get('developer', {})
+    if dev.get('name'):
+        ficha['additionalProperty'] = {'@type': 'PropertyValue', 'name': 'Promotora',
+                                       'value': dev['name']}
+
+    # el sitemap y el robots son dos archivos de tres líneas: se escriben aquí mismo
+    hoy = date.today().isoformat()
+    (RAIZ / 'sitemap.xml').write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f'  <url><loc>{base}</loc><lastmod>{hoy}</lastmod>'
+        '<changefreq>monthly</changefreq><priority>1.0</priority></url>\n'
+        '</urlset>\n', encoding='utf-8')
+    (RAIZ / 'robots.txt').write_text(
+        'User-agent: *\nAllow: /\n\nSitemap: ' + base + 'sitemap.xml\n', encoding='utf-8')
+
     html_out = PLANTILLA.format(
         titulo=esc(proyecto.get('htmlTitle') or proyecto['name']),
         nombre=esc(proyecto['name']),
@@ -133,10 +176,14 @@ def main():
         tour=esc(proyecto.get('siteUrl') or 'https://montelago-tour.condominiosvillacasa.com'),
         aviso=esc(proyecto.get('disclaimer', '')),
         empresa=esc(proyecto.get('developer', {}).get('name', '')),
+        base=esc(base),
+        og_img=esc(base + 'assets/img/tarjeta-og.jpg'),
+        jsonld=json.dumps(ficha, ensure_ascii=False, separators=(',', ':')),
     )
     (RAIZ / 'index.html').write_text(html_out, encoding='utf-8')
     print(f'index.html generado · {len(etapas)} etapas · {len(amenidades)} áreas comunes · '
           f'{len(clips)} clips · {len(libres)} lotes disponibles de {len(lotes)}')
+    print(f'sitemap.xml y robots.txt apuntando a {base}')
     print(f'cifras: {", ".join(v + " " + t for v, t in cifras)}')
 
 
@@ -150,6 +197,33 @@ PLANTILLA = '''<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{titulo}</title>
 <meta name="description" content="{descripcion}">
+<link rel="canonical" href="{base}">
+<meta name="theme-color" content="#044048">
+
+<!-- El icono de pestaña es el logo oficial sobre el verde de la marca: el logo que entregó
+     Arquitectura es blanco y sobre una pestaña blanca no se vería. Los compone traer_medios.py. -->
+<link rel="icon" href="assets/img/icono-32.png" sizes="32x32">
+<link rel="icon" href="assets/img/icono-180.png" sizes="180x180">
+<link rel="apple-touch-icon" href="assets/img/icono-180.png">
+
+<!-- Cómo se ve el enlace cuando alguien lo pega en WhatsApp, que es por donde va a circular.
+     La imagen tiene que ir con la dirección COMPLETA: una ruta relativa aquí no la resuelve
+     nadie. De ahí el --url de generar.py. No se declaran og:image:width ni height porque
+     tendría que teclearlos, y un tamaño teclado es un tamaño que algún día será mentira. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="{nombre}">
+<meta property="og:locale" content="es_PE">
+<meta property="og:url" content="{base}">
+<meta property="og:title" content="{titulo}">
+<meta property="og:description" content="{descripcion}">
+<meta property="og:image" content="{og_img}">
+<meta property="og:image:alt" content="Vista aérea de {nombre}">
+<meta name="twitter:card" content="summary_large_image">
+
+<!-- La ficha para los buscadores sale de los datos del tour: el nombre y la dirección son los
+     que puso Arquitectura en location, y las coordenadas, las del ingreso al proyecto. -->
+<script type="application/ld+json">{jsonld}</script>
+
 <link rel="preload" as="image" href="{portada}">
 <link rel="stylesheet" href="assets/estilos.css">
 </head>

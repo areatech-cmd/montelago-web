@@ -21,7 +21,8 @@ assets/main.js         el único JS: aparecer al scroll, el botón fijo, el víd
 assets/img/            renders oficiales copiados del tour (8 MB)
 assets/video/          la aérea de la portada (720 y 1080) y los 7 clips en 720 (16 MB)
 scripts/generar.py     arma index.html con los datos del tour
-scripts/traer_medios.py  copia las imágenes y comprime el vídeo
+scripts/traer_medios.py  copia imágenes y clips, y compone el icono y la tarjeta
+sitemap.xml, robots.txt  generados
 _headers               cuánto puede guardar en caché cada cosa
 ```
 
@@ -38,7 +39,12 @@ Arquitectura, palabra por palabra, y las cifras se *cuentan* del inventario en v
 ```bash
 python scripts/generar.py                 # usa ../WEB3D
 python scripts/generar.py --tour RUTA     # si el tour está en otro sitio
+python scripts/generar.py --url https://montelago.condominiosvillacasa.com/
 ```
+
+Lo de `--url` no es un adorno: la tarjeta que se ve al pegar el enlace en WhatsApp, la etiqueta
+canónica y el sitemap necesitan la dirección **completa**. Por defecto apunta a la de GitHub
+Pages; el día que el sitio se mude, se genera con `--url` y queda todo apuntando bien.
 
 Cuando cambie un estado o un precio en el Excel del inventario, se corre el importador del tour
 y después esto: la página se entera sola. Hoy dice «68 disponibles» y «desde 243 m²» porque eso
@@ -47,8 +53,16 @@ es lo que hay.
 Si llegan renders nuevos o clips nuevos:
 
 ```bash
-python scripts/traer_medios.py            # copia imágenes y clips, comprime el de la portada
+python scripts/traer_medios.py            # copia imágenes y clips, comprime lo que haga falta
 python scripts/generar.py
+```
+
+El vídeo de la portada **no se vuelve a comprimir si ya está**: x264 con varios hilos no da dos
+veces el mismo archivo, y cada pasada de más sería un blob de 7 MB nuevo en el historial sin que
+haya cambiado nada. Si Arquitectura manda un vídeo nuevo, `--rehacer`.
+
+```bash
+python scripts/traer_medios.py --rehacer  # fuerza la recompresión
 ```
 
 La galería se arma con los clips que el tour tenga en `gallery.items`: si mañana Arquitectura

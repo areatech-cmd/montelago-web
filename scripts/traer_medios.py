@@ -44,6 +44,8 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--tour', default=str(RAIZ.parent / 'WEB3D'))
+    ap.add_argument('--rehacer', action='store_true',
+                    help='volver a comprimir el vídeo y las imágenes derivadas aunque ya estén')
     args = ap.parse_args()
     tour = Path(args.tour)
     publico = tour / 'public'
@@ -89,8 +91,19 @@ def main():
         print(f'  portada-720.mp4  {chico.stat().st_size / 1048576:.1f} MB  (copiado tal cual)')
 
     grande = videos.get(1920)
-    if grande and grande.exists():
-        salida = destino_vid / 'portada-1080.mp4'
+    salida = destino_vid / 'portada-1080.mp4'
+    if grande and not grande.exists():
+        print('  AVISO  el tour no tiene el vídeo de 1080 de la portada')
+        grande = None
+    # Si ya está, NO se vuelve a comprimir. x264 con varios hilos no da dos veces el mismo
+    # archivo, así que cada pasada de más sería un blob de 7 MB nuevo en el historial de git sin
+    # que haya cambiado nada. Con --rehacer se fuerza, que es lo que toca si Arquitectura manda
+    # un vídeo nuevo.
+    if grande and salida.exists() and not args.rehacer:
+        print(f'  portada-1080.mp4 ya estaba ({salida.stat().st_size / 1048576:.1f} MB), '
+              f'no se recomprime · --rehacer para forzarlo')
+        grande = None
+    if grande:
         subprocess.run(
             [exe, '-hide_banner', '-loglevel', 'error', '-y', '-i', str(grande),
              '-an',                       # sin audio: el bucle va mudo de todas formas
@@ -100,6 +113,39 @@ def main():
              str(salida)], check=True)
         print(f'  portada-1080.mp4 {salida.stat().st_size / 1048576:.1f} MB  '
               f'(de {grande.stat().st_size / 1048576:.0f} MB, recomprimido a {BITRATE_1080})')
+
+    # --- La imagen de la tarjeta del enlace ---
+    # Esta página va a circular por WhatsApp, y WhatsApp no siempre pinta un WebP en la vista
+    # previa. Así que la aérea de la portada se guarda además en JPEG y al tamaño que esperan
+    # las tarjetas (1200x630): se recorta un poco arriba y abajo, que en una aérea no se nota.
+    portada_src = publico / p['masterplan']['stops'][0]['posterUrl']
+    if portada_src.exists():
+        salida = RAIZ / 'assets' / 'img' / 'tarjeta-og.jpg'
+        subprocess.run(
+            [exe, '-hide_banner', '-loglevel', 'error', '-y', '-i', str(portada_src),
+             '-vf', 'scale=1200:-1:flags=lanczos,crop=1200:630',
+             # calidad 7 y no 3: medido sobre esta misma aérea, el 3 da 292 KB, el 5 da 213
+             # y el 7 da 166. Algunas versiones de WhatsApp dejan de pintar la vista previa
+             # pasados los 200 KB, y en una tarjeta de 1200 px mirada de paso en un chat la
+             # diferencia entre el 3 y el 7 no se ve.
+             '-q:v', '7', '-frames:v', '1', str(salida)], check=True)
+        print(f'  tarjeta-og.jpg  {salida.stat().st_size / 1024:.0f} KB  (para WhatsApp y Facebook)')
+
+    # --- Iconos de pestaña ---
+    # El único logo que entregó Arquitectura es blanco (1187x830), y un logo blanco sobre la
+    # pestaña blanca de un navegador no se ve. Así que se compone sobre el verde de la marca: el
+    # logo es el oficial, el fondo es el color oficial, y no hay que inventar ningún símbolo.
+    # Si algún día Marketing entrega un icono propio, se reemplazan estos dos y ya.
+    logo = publico / p['home']['logoImgUrl']
+    if logo.exists():
+        for lado, dentro in ((180, 148), (32, 30)):
+            salida = destino_img / f'icono-{lado}.png'
+            subprocess.run(
+                [exe, '-hide_banner', '-loglevel', 'error', '-y', '-i', str(logo),
+                 '-vf', f'scale={dentro}:-1:flags=lanczos,'
+                        f'pad={lado}:{lado}:(ow-iw)/2:(oh-ih)/2:color=0x044048',
+                 '-frames:v', '1', str(salida)], check=True)
+            print(f'  icono-{lado}.png  {salida.stat().st_size / 1024:.1f} KB')
 
     # --- Clips de la galería: de cada uno, el de 720 ---
     clips = copiados = peso_clips = 0
