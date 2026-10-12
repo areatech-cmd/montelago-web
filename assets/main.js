@@ -77,3 +77,42 @@ if (video) {
     video.remove()
   }
 }
+
+/* ---------- La galería: el clip se baja cuando lo piden ---------- */
+// Siete clips de 400 KB a 1,3 MB. Cargarlos al entrar serían 5 MB que casi nadie va a ver, así
+// que cada recuadro es una foto con su botón de play y el vídeo aparece al pulsarlo.
+//
+// Sin JS esto no se rompe: el recuadro es un enlace a un .mp4 y el navegador lo abre él solo.
+// Y si el vídeo no llega a cargar, el recuadro VUELVE a ser la foto con un aviso, en vez de
+// quedarse como un rectángulo negro con el que no se puede hacer nada.
+const galeria = document.querySelector('.clips')
+if (galeria) {
+  const pausarLasDemas = (menos) =>
+    galeria.querySelectorAll('video').forEach((v) => v !== menos && v.pause())
+
+  galeria.addEventListener('click', (ev) => {
+    const enlace = ev.target.closest('.clip__abrir')
+    if (!enlace || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.button) return // clic de «abrir aparte»
+    ev.preventDefault()
+
+    const video = document.createElement('video')
+    video.src = enlace.getAttribute('href')
+    video.poster = enlace.querySelector('img')?.getAttribute('src') || ''
+    video.controls = true
+    video.playsInline = true
+    video.setAttribute('aria-label', enlace.getAttribute('aria-label') || '')
+
+    video.addEventListener('play', () => pausarLasDemas(video))
+    video.addEventListener('error', () => {
+      video.replaceWith(enlace)
+      const aviso = document.createElement('p')
+      aviso.className = 'clip__fallo'
+      aviso.textContent = 'Este clip no cargó. Se puede ver en el tour.'
+      enlace.after(aviso)
+    }, { once: true })
+
+    enlace.replaceWith(video)
+    pausarLasDemas(video)
+    video.play().catch(() => {}) // el clic ya es permiso, pero si el navegador dice no, quedan los controles
+  })
+}

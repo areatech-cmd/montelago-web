@@ -78,6 +78,16 @@ def main():
         amenidades.append({'nombre': a['name'], 'texto': a.get('shortText', ''),
                            'foto': img(foto), 'rasgos': (a.get('features') or [])[:5]})
 
+    # --- Galería: los clips oficiales, en su versión de 720 ---
+    clips = []
+    for g in p['gallery']['items']:
+        url = g.get('url') or ''
+        if not url.endswith('.mp4'):
+            continue
+        clips.append({'label': g.get('label', ''),
+                      'foto': img(g.get('posterUrl', '')),
+                      'clip': 'assets/video/' + Path(url).name.replace('-1080.mp4', '-720.mp4')})
+
     plano = next((g for k, g in galeria.items() if 'masterplan-general' in (g.get('url') or '')), None)
     mapa = next((g for k, g in galeria.items() if 'mapa-rutas' in (g.get('url') or '')), None)
 
@@ -109,6 +119,14 @@ def main():
         <h3>{esc(a['nombre'])}</h3><p>{esc(a['texto'])}</p>
         <ul>{''.join(f'<li>{esc(r)}</li>' for r in a['rasgos'])}</ul>
       </article>''' for a in amenidades),
+        clips='\n'.join(
+            f'''      <article class="clip">
+        <a class="clip__abrir" href="{c['clip']}" aria-label="Ver el clip: {esc(c['label'])}">
+          <img src="{c['foto']}" alt="{esc(c['label'])}" loading="lazy">
+          <span class="clip__play" aria-hidden="true"></span>
+          <span class="clip__nombre">{esc(c['label'])}</span>
+        </a>
+      </article>''' for c in clips),
         mapa_img=img((mapa or {}).get('url', '')),
         mapa_pie=esc((mapa or {}).get('label', '')),
         wa=esc(wa), correo=esc(correo),
@@ -118,7 +136,7 @@ def main():
     )
     (RAIZ / 'index.html').write_text(html_out, encoding='utf-8')
     print(f'index.html generado · {len(etapas)} etapas · {len(amenidades)} áreas comunes · '
-          f'{len(libres)} lotes disponibles de {len(lotes)}')
+          f'{len(clips)} clips · {len(libres)} lotes disponibles de {len(lotes)}')
     print(f'cifras: {", ".join(v + " " + t for v, t in cifras)}')
 
 
@@ -176,6 +194,17 @@ PLANTILLA = '''<!doctype html>
   <div class="rejilla">
 {amenidades}
   </div>
+</section>
+
+<section class="seccion" id="galeria">
+  <h2>El proyecto en movimiento</h2>
+  <!-- Cada recuadro es una foto hasta que alguien lo pide: el clip no se baja al entrar. Sin
+       JS el enlace abre el vídeo en el navegador, que es lo que un enlace a un .mp4 hace. -->
+  <div class="clips">
+{clips}
+  </div>
+  <p class="pie">No son grabaciones del lugar: son los renders oficiales de Arquitectura,
+     animados. El recorrido completo, con sonido y a pantalla llena, está en el tour.</p>
 </section>
 
 <section class="seccion" id="llegar">

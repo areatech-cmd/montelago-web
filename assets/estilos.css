@@ -111,3 +111,33 @@ body {
 .fija--oculta { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(12px); }
 .fija { transition: opacity .35s var(--ease), transform .35s var(--ease); }
 @media (prefers-reduced-motion: reduce) { .fija { transition: none; } }
+
+/* ---------- Galería de clips ---------- */
+.clips { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.clip__abrir {
+  position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden;
+  border-radius: var(--radio); background: var(--brand-soft); box-shadow: var(--sombra);
+}
+.clip__abrir img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--ease); }
+.clip__abrir:hover img, .clip__abrir:focus-visible img { transform: scale(1.04); }
+.clip__play {
+  position: absolute; inset: 0; margin: auto; width: 58px; height: 58px;
+  border-radius: 50%; background: rgba(255, 255, 255, .93); box-shadow: var(--sombra);
+}
+.clip__play::after {
+  /* el triángulo, un poco a la derecha para que se vea centrado */
+  content: ''; position: absolute; top: 50%; left: 54%; transform: translate(-50%, -50%);
+  border-left: 15px solid var(--brand);
+  border-top: 9px solid transparent; border-bottom: 9px solid transparent;
+}
+.clip__nombre {
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 30px 14px 11px;
+  color: var(--white); font-size: 13px; font-weight: 600; line-height: 1.3;
+  background: linear-gradient(transparent, rgba(4, 38, 43, .8));
+}
+/* el vídeo ocupa el mismo hueco que ocupaba la foto: nada salta al abrirlo */
+.clip video { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: var(--radio); background: #000; box-shadow: var(--sombra); }
+.clip__fallo { margin: 8px 0 0; color: var(--muted); font-size: 12.5px; }
+@media (prefers-reduced-motion: reduce) {
+  .clip__abrir img, .clip__abrir:hover img { transition: none; transform: none; }
+}

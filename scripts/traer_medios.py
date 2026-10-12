@@ -1,7 +1,8 @@
 """Trae del tour el material que esta web usa, y sólo ése.
 
-El tour pesa unos 190 MB. Aquí hacen falta 25 imágenes y el vídeo de la portada, nada más, así
-que copiarlo entero sería arrastrar peso muerto a un repositorio público.
+El tour pesa unos 190 MB. Aquí hacen falta las imágenes que la página nombra, el vídeo de la
+portada y los clips de la galería, nada más: copiarlo entero sería arrastrar peso muerto a un
+repositorio público.
 
     python scripts/traer_medios.py                 # usa ..\\WEB3D
     python scripts/traer_medios.py --tour RUTA
@@ -11,6 +12,10 @@ se vuelve a comprimir, y conviene explicar por qué: el original de 1080 va a 11
 por quince segundos—, que es una barbaridad para lo primero que ve alguien que llega de un
 anuncio. A 4 Mbps son unos 7 MB y en un bucle de fondo, detrás de un velo y con el logo encima,
 no se distingue. El de 720 se queda como está: ya pesa poco.
+
+De los clips de la galería se trae **sólo la versión de 720**, no la de 1080. Son siete; en
+1080 suman 17 MB y en 720, cinco. En un recuadro de la galería no se distinguen, y el que
+quiera verlo en grande tiene el tour, que es justo a donde esta página lleva.
 
 Necesita ffmpeg. Si el tour está al lado, usa el suyo (node_modules/ffmpeg-static).
 """
@@ -95,6 +100,22 @@ def main():
              str(salida)], check=True)
         print(f'  portada-1080.mp4 {salida.stat().st_size / 1048576:.1f} MB  '
               f'(de {grande.stat().st_size / 1048576:.0f} MB, recomprimido a {BITRATE_1080})')
+
+    # --- Clips de la galería: de cada uno, el de 720 ---
+    clips = copiados = peso_clips = 0
+    for g in p['gallery']['items']:
+        url = g.get('url') or ''
+        if not url.endswith('.mp4'):
+            continue
+        clips += 1
+        src = publico / url.replace('-1080.mp4', '-720.mp4')
+        if not src.exists():
+            print(f'  AVISO  no está el 720 de {Path(url).name}')
+            continue
+        shutil.copy2(src, destino_vid / src.name)
+        copiados += 1
+        peso_clips += src.stat().st_size
+    print(f'clips de galería: {copiados} de {clips} · {peso_clips / 1048576:.1f} MB')
 
     print('\nAhora: python scripts/generar.py')
 

@@ -12,16 +12,18 @@ textos e imágenes una vez, al generarse, y después es HTML plano.
 ```
 index.html             generado — no editar a mano
 assets/estilos.css     los colores y la retícula
-assets/main.js         el único JS: aparecer al hacer scroll, el botón fijo y el vídeo
+assets/main.js         el único JS: aparecer al scroll, el botón fijo, el vídeo y la galería
 assets/img/            renders oficiales copiados del tour (8 MB)
-assets/video/          la aérea de la portada, en 720 y 1080 (12 MB)
+assets/video/          la aérea de la portada (720 y 1080) y los 7 clips en 720 (16 MB)
 scripts/generar.py     arma index.html con los datos del tour
 scripts/traer_medios.py  copia las imágenes y comprime el vídeo
 _headers               cuánto puede guardar en caché cada cosa
 ```
 
-El vídeo pesa 12 MB y vive en el repositorio. Cada vez que se vuelva a comprimir, el historial
-se queda también con la copia vieja: conviene no recomprimirlo por gusto.
+Los vídeos pesan 16 MB y viven en el repositorio. Cada vez que se vuelva a comprimir uno, el
+historial se queda también con la copia vieja: conviene no recomprimirlos por gusto. De los
+clips de la galería se trae sólo la versión de 720 —en 1080 serían 17 MB en vez de 5, y en un
+recuadro no se distinguen—; el que los quiera en grande tiene el tour.
 
 ## Cómo se actualiza
 
@@ -37,7 +39,15 @@ Cuando cambie un estado o un precio en el Excel del inventario, se corre el impo
 y después esto: la página se entera sola. Hoy dice «68 disponibles» y «desde 243 m²» porque eso
 es lo que hay.
 
-Si llegan renders nuevos, se copian a `assets/img/` con el mismo nombre y se vuelve a generar.
+Si llegan renders nuevos o clips nuevos:
+
+```bash
+python scripts/traer_medios.py            # copia imágenes y clips, comprime el de la portada
+python scripts/generar.py
+```
+
+La galería se arma con los clips que el tour tenga en `gallery.items`: si mañana Arquitectura
+manda uno más y entra al tour, aquí sale solo.
 
 ## Cómo se publica
 
