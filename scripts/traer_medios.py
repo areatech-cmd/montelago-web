@@ -114,6 +114,46 @@ def main():
         print(f'  portada-1080.mp4 {salida.stat().st_size / 1048576:.1f} MB  '
               f'(de {grande.stat().st_size / 1048576:.0f} MB, recomprimido a {BITRATE_1080})')
 
+    # --- La fuente de la marca, servida desde aquí ---
+    # Sin esto la página caía a la fuente del sistema y no se parecía a la marca. Se copian las
+    # cuatro variantes que esta página usa y SÓLO la subserie «latin»: cubre tildes, ñ, · y ²,
+    # que es todo lo que hay en un texto en español. La «latin-ext» son 276 KB para alfabetos
+    # que aquí no aparecen.
+    #
+    # Se sirven desde el propio sitio, como en el tour: así la IP del visitante no viaja a
+    # Google por el hecho de leer una página.
+    RANGO_LATIN = (
+        'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, '
+        'U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, '
+        'U+FEFF, U+FFFD'
+    )
+    fuentes = RAIZ / 'assets' / 'fuentes'
+    fuentes.mkdir(parents=True, exist_ok=True)
+    reglas = []
+    for peso in (400, 600, 700):   # el 500 no lo usa nadie: son 37 KB que no se bajan
+        src = publico / 'fonts' / f'montserrat-{peso}-latin.woff2'
+        if not src.exists():
+            print(f'  AVISO  falta la variante de {peso} de la fuente')
+            continue
+        shutil.copy2(src, fuentes / src.name)
+        reglas.append(
+            '@font-face {\n'
+            "  font-family: 'Montserrat';\n"
+            '  font-style: normal;\n'
+            f'  font-weight: {peso};\n'
+            '  font-display: swap;\n'
+            f"  src: url(./{src.name}) format('woff2');\n"
+            f'  unicode-range: {RANGO_LATIN};\n'
+            '}'
+        )
+    if reglas:
+        (fuentes / 'montserrat.css').write_text(
+            '/* Generado por scripts/traer_medios.py: no editar a mano.\n'
+            '   Montserrat servida desde el propio sitio, subserie latin. */\n'
+            + '\n'.join(reglas) + '\n', encoding='utf-8')
+        peso_f = sum(p.stat().st_size for p in fuentes.glob('*.woff2'))
+        print(f'fuentes: {len(reglas)} variantes · {peso_f / 1024:.0f} KB')
+
     # --- La imagen de la tarjeta del enlace ---
     # Esta página va a circular por WhatsApp, y WhatsApp no siempre pinta un WebP en la vista
     # previa. Así que la aérea de la portada se guarda además en JPEG y al tamaño que esperan

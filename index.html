@@ -35,10 +35,21 @@
      que puso Arquitectura en location, y las coordenadas, las del ingreso al proyecto. -->
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Place","name":"Montelago Condominio Club","description":"Montelago es un condominio ecoamigable diseñado para brindar una experiencia de vida en contacto con la naturaleza, integrando espacios residenciales, recreativos y de bienestar en un entorno sostenible.","url":"https://areatech-cmd.github.io/montelago-web/","image":"https://areatech-cmd.github.io/montelago-web/assets/img/tarjeta-og.jpg","address":{"@type":"PostalAddress","streetAddress":"57FQ+J7, Sector La Calerita · distrito de Tumán, provincia de Chiclayo, Lambayeque","addressLocality":"Tumán","addressRegion":"Lambayeque","addressCountry":"PE"},"telephone":"+51 913 401 447","isicV4":"6810","geo":{"@type":"GeoCoordinates","latitude":-6.825972,"longitude":-79.711792},"additionalProperty":{"@type":"PropertyValue","name":"Promotora","value":"Villacasa Group S.A.C."}}</script>
 
-<link rel="preload" as="image" href="assets/img/poster.webp">
+<!-- Montserrat desde el propio sitio: la fuente de la marca, y la IP del visitante no viaja
+     a Google por leer una página. Las dos variantes que se ven de entrada van precargadas; el
+     crossorigin NO es opcional en una fuente, aunque sea del mismo sitio. -->
+<link rel="preload" as="font" type="font/woff2" href="assets/fuentes/montserrat-400-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="assets/fuentes/montserrat-600-latin.woff2" crossorigin>
+<link rel="stylesheet" href="assets/fuentes/montserrat.css">
+
+<link rel="preload" as="image" href="assets/img/poster.webp" fetchpriority="high">
 <link rel="stylesheet" href="assets/estilos.css">
 </head>
 <body>
+
+<!-- Para quien navega con el teclado: lo primero que se enfoca es un enlace que salta los seis
+     enlaces de la barra y va al contenido. Sólo se ve cuando tiene el foco. -->
+<a class="salto" href="#contenido">Ir al contenido</a>
 
 <!-- La barra va encima de la portada, transparente, y se vuelve verde al dejarla atrás. El logo
      es blanco —es el único que entregó Arquitectura—, así que la barra sólida NO puede ser
@@ -49,7 +60,8 @@
      todas las secciones caben de un toque. -->
 <nav class="menu" aria-label="Secciones">
   <a class="menu__marca" href="#portada" aria-label="Montelago, ir arriba">
-    <img src="assets/img/logo-white.png" alt="Montelago" width="150" height="40">
+    <!-- alt vacío: el enlace que lo envuelve ya lleva su propia etiqueta -->
+    <img src="assets/img/logo-white.png" alt="" width="1187" height="830">
   </a>
   <ul class="menu__lista">
     <li><a href="#etapas">El proyecto</a></li>
@@ -65,13 +77,16 @@
   <!-- La foto se ve siempre y de inmediato; el vídeo entra encima cuando ha bajado lo
        suficiente. Si el visitante pidió ahorro de datos, o va por una conexión lenta, o tiene
        el movimiento reducido, el vídeo no se baja: se queda la foto. Eso lo decide main.js. -->
-  <img class="portada__fondo" src="assets/img/poster.webp" alt="Vista aérea de Montelago">
+  <img class="portada__fondo" src="assets/img/poster.webp" alt="Vista aérea de Montelago" width="1920" height="1080" fetchpriority="high">
   <video class="portada__video" poster="assets/img/poster.webp" muted loop playsinline preload="none"
          data-720="assets/video/portada-720.mp4" data-1080="assets/video/portada-1080.mp4"
          aria-hidden="true"></video>
   <div class="portada__velo"></div>
   <div class="portada__centro">
-    <img class="portada__logo" src="assets/img/logo-white.png" alt="Montelago">
+    <!-- El logo ES el título de la página: su texto alternativo hace de h1. Antes la página no
+         tenía ningún h1 y para un buscador —o para quien la lee con un lector de pantalla— eso
+         es una página sin nombre. -->
+    <h1 class="portada__titulo"><img class="portada__logo" src="assets/img/logo-white.png" alt="Montelago · Condominio Club" width="1187" height="830"></h1>
     <p class="tagline">Condominio Club</p>
     <p class="lead">Montelago es un condominio ecoamigable diseñado para brindar una experiencia de vida en contacto con la naturaleza, integrando espacios residenciales, recreativos y de bienestar en un entorno sostenible.</p>
     <div class="acciones">
@@ -80,6 +95,8 @@
     </div>
   </div>
 </header>
+
+<main id="contenido">
 
 <section class="seccion cifras" id="cifras">
       <div class="dato"><strong>3</strong><span>etapas</span></div>
@@ -92,15 +109,15 @@
   <h2>El proyecto, en tres etapas</h2>
   <div class="rejilla">
       <article class="tarjeta">
-        <div class="tarjeta__foto"><img src="assets/img/etapa-2-poster.webp" alt="Etapa I" loading="lazy"></div>
+        <div class="tarjeta__foto"><img src="assets/img/etapa-2-poster.webp" alt="Etapa I" width="1920" height="1080" loading="lazy" decoding="async"></div>
         <h3>Etapa I</h3><p>Primera etapa: 116 lotes residenciales articulados alrededor de una laguna artificial como elemento paisajístico central, con espacios de contemplación, recreación y conexión con la naturaleza.</p>
       </article>
       <article class="tarjeta">
-        <div class="tarjeta__foto"><img src="assets/img/etapa-2-poster.webp" alt="Etapa II" loading="lazy"></div>
+        <div class="tarjeta__foto"><img src="assets/img/etapa-2-poster.webp" alt="Etapa II" width="1920" height="1080" loading="lazy" decoding="async"></div>
         <h3>Etapa II</h3><p>Segunda etapa del proyecto conformada por 111 lotes residenciales, integrada alrededor de una segunda laguna artificial que amplía la propuesta paisajística del condominio, incorporando nuevos espacios de descanso, recreación y disfrute del entorno natural.</p>
       </article>
       <article class="tarjeta">
-        <div class="tarjeta__foto"><img src="assets/img/etapa-3-poster.webp" alt="Etapa III" loading="lazy"></div>
+        <div class="tarjeta__foto"><img src="assets/img/etapa-3-poster.webp" alt="Etapa III" width="1920" height="1076" loading="lazy" decoding="async"></div>
         <h3>Etapa III</h3><p>Tercera etapa del proyecto conformada por 115 lotes residenciales, complementada con una zona deportiva y Club House como espacios de encuentro, integración y recreación, fortaleciendo la experiencia residencial mediante ambientes sociales y de bienestar.</p>
       </article>
   </div>
@@ -108,7 +125,7 @@
 
 <section class="seccion" id="plano">
   <h2>Dónde está cada cosa</h2>
-  <img class="ancha" src="assets/img/masterplan-general.webp" alt="Plano general del proyecto · etapas y zonas recreativas" loading="lazy">
+  <img class="ancha" src="assets/img/masterplan-general.webp" alt="Plano general del proyecto · etapas y zonas recreativas" width="1920" height="1080" loading="lazy" decoding="async">
   <p class="pie">Plano general del proyecto · etapas y zonas recreativas</p>
 </section>
 
@@ -116,27 +133,27 @@
   <h2>Áreas comunes</h2>
   <div class="rejilla">
       <article class="tarjeta">
-        <div class="tarjeta__foto"><img src="assets/img/lago-central.webp" alt="Laguna artificial 1" loading="lazy"></div>
+        <div class="tarjeta__foto"><img src="assets/img/lago-central.webp" alt="Laguna artificial 1" width="1280" height="720" loading="lazy" decoding="async"></div>
         <h3>Laguna artificial 1</h3><p>Recreación y descanso alrededor de la laguna de la Etapa I.</p>
         <ul><li>Zonas de picnic</li><li>Juegos infantiles</li><li>Parque canino</li><li>Gimnasio al aire libre</li><li>Zona de yoga</li></ul>
       </article>
       <article class="tarjeta">
-        <div class="tarjeta__foto"><img src="assets/img/casa-club.webp" alt="Zona deportiva y Club House" loading="lazy"></div>
+        <div class="tarjeta__foto"><img src="assets/img/casa-club.webp" alt="Zona deportiva y Club House" width="1280" height="720" loading="lazy" decoding="async"></div>
         <h3>Zona deportiva y Club House</h3><p>Deporte, eventos y piscina en la Etapa III.</p>
         <ul><li>Canchas deportivas de uso común</li><li>Club House</li><li>Piscina de uso común con duchas y cerco de seguridad</li><li>Zonas de parrillas</li><li>Zonas de fogata</li></ul>
       </article>
       <article class="tarjeta">
-        <div class="tarjeta__foto"><img src="assets/img/lago-norte.webp" alt="Laguna artificial 2" loading="lazy"></div>
+        <div class="tarjeta__foto"><img src="assets/img/lago-norte.webp" alt="Laguna artificial 2" width="1280" height="720" loading="lazy" decoding="async"></div>
         <h3>Laguna artificial 2</h3><p>Mirador, fogatas y picnic en la Etapa II.</p>
         <ul><li>Mirador</li><li>Zonas de descanso</li><li>Áreas de fogata</li><li>Espacios de picnic</li></ul>
       </article>
       <article class="tarjeta">
-        <div class="tarjeta__foto"><img src="assets/img/areas-verdes.webp" alt="Áreas verdes" loading="lazy"></div>
+        <div class="tarjeta__foto"><img src="assets/img/areas-verdes.webp" alt="Áreas verdes" width="1600" height="900" loading="lazy" decoding="async"></div>
         <h3>Áreas verdes</h3><p>Arbolado y senderos entre las manzanas.</p>
         <ul><li>Cerco vivo perimetral</li><li>Arborización en vías y pasajes</li><li>Áreas libres de uso peatonal</li></ul>
       </article>
       <article class="tarjeta">
-        <div class="tarjeta__foto"><img src="assets/img/lago-sur.webp" alt="Ingreso y servicios" loading="lazy"></div>
+        <div class="tarjeta__foto"><img src="assets/img/lago-sur.webp" alt="Ingreso y servicios" width="1280" height="720" loading="lazy" decoding="async"></div>
         <h3>Ingreso y servicios</h3><p>Vigilancia en el pórtico, agua, electricidad y vías internas.</p>
         <ul><li>Pórtico con caseta de vigilancia</li><li>Portón vehicular y peatonal</li><li>Vías internas afirmadas</li><li>Redes eléctricas hasta el lote</li><li>Agua de pozo tubular propio</li></ul>
       </article>
@@ -150,49 +167,49 @@
   <div class="clips">
       <article class="clip">
         <a class="clip__abrir" href="assets/video/llegada-720.mp4" aria-label="Ver el clip: Llegada al proyecto">
-          <img src="assets/img/llegada-poster.webp" alt="Llegada al proyecto" loading="lazy">
+          <img src="assets/img/llegada-poster.webp" alt="Llegada al proyecto" width="1920" height="1080" loading="lazy" decoding="async">
           <span class="clip__play" aria-hidden="true"></span>
           <span class="clip__nombre">Llegada al proyecto</span>
         </a>
       </article>
       <article class="clip">
         <a class="clip__abrir" href="assets/video/recorrido-720.mp4" aria-label="Ver el clip: Recorrido aéreo sobre las tres etapas">
-          <img src="assets/img/recorrido-poster.webp" alt="Recorrido aéreo sobre las tres etapas" loading="lazy">
+          <img src="assets/img/recorrido-poster.webp" alt="Recorrido aéreo sobre las tres etapas" width="1920" height="1080" loading="lazy" decoding="async">
           <span class="clip__play" aria-hidden="true"></span>
           <span class="clip__nombre">Recorrido aéreo sobre las tres etapas</span>
         </a>
       </article>
       <article class="clip">
         <a class="clip__abrir" href="assets/video/cenital-720.mp4" aria-label="Ver el clip: La Etapa I desde arriba">
-          <img src="assets/img/cenital-poster.webp" alt="La Etapa I desde arriba" loading="lazy">
+          <img src="assets/img/cenital-poster.webp" alt="La Etapa I desde arriba" width="1920" height="1080" loading="lazy" decoding="async">
           <span class="clip__play" aria-hidden="true"></span>
           <span class="clip__nombre">La Etapa I desde arriba</span>
         </a>
       </article>
       <article class="clip">
         <a class="clip__abrir" href="assets/video/laguna-720.mp4" aria-label="Ver el clip: La laguna artificial">
-          <img src="assets/img/laguna-poster.webp" alt="La laguna artificial" loading="lazy">
+          <img src="assets/img/laguna-poster.webp" alt="La laguna artificial" width="1920" height="1080" loading="lazy" decoding="async">
           <span class="clip__play" aria-hidden="true"></span>
           <span class="clip__nombre">La laguna artificial</span>
         </a>
       </article>
       <article class="clip">
         <a class="clip__abrir" href="assets/video/calma-720.mp4" aria-label="Ver el clip: El proyecto en calma">
-          <img src="assets/img/calma-poster.webp" alt="El proyecto en calma" loading="lazy">
+          <img src="assets/img/calma-poster.webp" alt="El proyecto en calma" width="1920" height="1080" loading="lazy" decoding="async">
           <span class="clip__play" aria-hidden="true"></span>
           <span class="clip__nombre">El proyecto en calma</span>
         </a>
       </article>
       <article class="clip">
         <a class="clip__abrir" href="assets/video/etapa-2-720.mp4" aria-label="Ver el clip: Etapa II · la zona de la segunda laguna">
-          <img src="assets/img/etapa-2-poster.webp" alt="Etapa II · la zona de la segunda laguna" loading="lazy">
+          <img src="assets/img/etapa-2-poster.webp" alt="Etapa II · la zona de la segunda laguna" width="1920" height="1080" loading="lazy" decoding="async">
           <span class="clip__play" aria-hidden="true"></span>
           <span class="clip__nombre">Etapa II · la zona de la segunda laguna</span>
         </a>
       </article>
       <article class="clip">
         <a class="clip__abrir" href="assets/video/etapa-3-720.mp4" aria-label="Ver el clip: Etapa III · la zona del Club House">
-          <img src="assets/img/etapa-3-poster.webp" alt="Etapa III · la zona del Club House" loading="lazy">
+          <img src="assets/img/etapa-3-poster.webp" alt="Etapa III · la zona del Club House" width="1920" height="1076" loading="lazy" decoding="async">
           <span class="clip__play" aria-hidden="true"></span>
           <span class="clip__nombre">Etapa III · la zona del Club House</span>
         </a>
@@ -204,7 +221,7 @@
 
 <section class="seccion" id="llegar">
   <h2>Cómo llegar</h2>
-  <img class="ancha" src="assets/img/mapa-rutas.webp" alt="Cómo llegar · doble acceso por Reque y Pomalca" loading="lazy">
+  <img class="ancha" src="assets/img/mapa-rutas.webp" alt="Cómo llegar · doble acceso por Reque y Pomalca" width="1600" height="900" loading="lazy" decoding="async">
   <p class="pie">Cómo llegar · doble acceso por Reque y Pomalca</p>
 </section>
 
@@ -263,6 +280,8 @@
   </div>
   <p class="nota">Las imágenes, planos y medidas son referenciales y pueden variar. La disponibilidad y los precios están sujetos a confirmación por el área comercial.</p>
 </section>
+
+</main>
 
 <footer class="pie-web">
   <p>Villacasa Group S.A.C.</p>

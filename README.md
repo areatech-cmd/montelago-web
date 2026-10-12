@@ -20,6 +20,7 @@ assets/main.js         el único JS: aparecer al scroll, el botón fijo, el víd
                        la galería y el formulario
 assets/img/            renders oficiales copiados del tour (8 MB)
 assets/video/          la aérea de la portada (720 y 1080) y los 7 clips en 720 (16 MB)
+assets/fuentes/        Montserrat, servida desde aquí (3 pesos, 111 KB)
 scripts/generar.py     arma index.html con los datos del tour
 scripts/traer_medios.py  copia imágenes y clips, y compone el icono y la tarjeta
 sitemap.xml, robots.txt  generados
@@ -105,6 +106,23 @@ Cualquiera puede leer el código y descargar los renders. Se decidió a sabienda
 gratis lo exige. Lo que **no** está aquí sigue sin estar: el Excel del inventario con los
 nombres de los clientes y de las asesoras, los precios cash y cualquier credencial. Esta página
 sólo publica lo que de todas formas se le enseña a quien pregunta.
+
+## Detalles que parecen pequeños y no lo son
+
+**Las medidas de cada imagen se leen del archivo, no se teclean.** Van en el HTML para que el
+navegador reserve el hueco antes de bajar la foto; sin eso el texto baja de golpe cada vez que
+aparece una imagen y la página salta mientras se lee. Las lee `generar.py` de la cabecera del
+WebP o del PNG —treinta líneas, sin depender de Pillow—, porque un tamaño teclado sobrevive al
+render que lo reemplaza y entonces miente.
+
+**La fuente se sirve desde aquí.** Montserrat es la de la marca; sin ella la página caía a la
+del sistema y no se parecía. Van tres pesos y sólo la subserie *latin*, que cubre tildes, ñ, ·
+y ² —todo lo que hay en un texto en español—. Se sirve desde el propio sitio, como en el tour:
+así la IP del visitante no viaja a Google por el hecho de leer una página.
+
+**Se puede recorrer con el teclado.** Lo primero que se enfoca es un salto al contenido, el
+foco se ve sobre cualquier fondo, el logo de la portada hace de `h1` y el formulario marca el
+campo mal escrito con `aria-invalid`, no sólo con un borde rojo que nadie oye.
 
 ## Dos reglas que este proyecto hereda del tour
 

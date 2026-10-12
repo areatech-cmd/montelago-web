@@ -172,6 +172,9 @@ if (consulta) {
     const campo = campoDe(n)
     campo.classList.toggle('mal', fallo !== true)
     consulta.querySelector('[data-error="' + n + '"]').textContent = fallo === true ? '' : fallo
+    // el color rojo del borde no lo ve quien usa un lector de pantalla: aria-invalid sí lo dice
+    if (fallo === true) dato(n).removeAttribute('aria-invalid')
+    else dato(n).setAttribute('aria-invalid', 'true')
     return fallo === true
   }
 

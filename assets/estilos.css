@@ -63,6 +63,12 @@ body {
   transition: transform .2s var(--ease), background-color .2s;
 }
 .btn:hover { transform: translateY(-1px); }
+/* Un botón no puede ser más ancho que la pantalla. Con «Recorrer el proyecto» dentro y 24 px de
+   aire a cada lado, por debajo de unos 300 px de ancho se salía. Ningún teléfono mide tan poco,
+   pero quien tenga la letra del sistema grande, o el día que una etiqueta se alargue, sí. */
+.btn { max-width: 100%; text-align: center; }
+@media (max-width: 380px) { .btn { padding: 0 16px; font-size: 13.5px; } }
+.fija { max-width: calc(100vw - 28px); }
 .btn--primario { background: var(--brand); color: var(--white); }
 
 /* ---------- Secciones ---------- */
@@ -85,7 +91,9 @@ body {
 .dato span { display: block; margin-top: 4px; color: var(--muted); font-size: 13px; }
 
 /* ---------- Tarjetas ---------- */
-.rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 26px; }
+/* El min(...,100%) no es adorno: con minmax(270px,...) a secas, en una pantalla de 320 px
+   —que las hay— la columna no cabe y la página se desborda de lado. */
+.rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr)); gap: 26px; }
 .tarjeta__foto { aspect-ratio: 16/10; border-radius: var(--radio); overflow: hidden; background: var(--brand-soft); }
 .tarjeta__foto img { width: 100%; height: 100%; object-fit: cover; }
 .tarjeta h3 { margin: 14px 0 6px; font-size: 18px; color: var(--brand); }
@@ -113,7 +121,7 @@ body {
 @media (prefers-reduced-motion: reduce) { .fija { transition: none; } }
 
 /* ---------- Galería de clips ---------- */
-.clips { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; }
+.clips { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 18px; }
 .clip__abrir {
   position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden;
   border-radius: var(--radio); background: var(--brand-soft); box-shadow: var(--sombra);
@@ -146,7 +154,7 @@ body {
 /* Sólo con JS: es JS quien arma el mensaje. Sin él quedan los dos enlaces de debajo. */
 .consulta { display: none; }
 .js .consulta { display: block; max-width: 720px; margin: 30px auto 0; text-align: left; }
-.consulta__fila { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.consulta__fila { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 @media (max-width: 620px) { .consulta__fila { grid-template-columns: 1fr; } }
 .campo { display: block; margin-bottom: 14px; }
 .campo > span { display: block; margin-bottom: 5px; font-size: 13px; font-weight: 600; color: var(--brand); }
@@ -196,7 +204,9 @@ html:not(.js) .consulta__o { display: none; }
 .menu__lista a {
   display: block; padding: 8px 11px; border-radius: 999px;
   color: var(--white); text-decoration: none; white-space: nowrap;
-  font-size: 13.5px; font-weight: 500; opacity: .88;
+  /* 600 y no 500 a propósito: es el peso que ya va precargado, así la barra —que es lo
+     primero que se ve— no cambia de letra a media carga, y nos ahorra bajar una variante. */
+  font-size: 13.5px; font-weight: 600; opacity: .88;
   transition: background-color .2s, opacity .2s;
 }
 .menu__lista a:hover, .menu__lista a:focus-visible { opacity: 1; background: rgba(255, 255, 255, .14); }
@@ -215,3 +225,33 @@ html:not(.js) .consulta__o { display: none; }
 }
 /* que el título de la sección no quede debajo de la barra al llegar por un enlace */
 .seccion, .portada { scroll-margin-top: 58px; }
+
+/* ---------- Teclado y foco ---------- */
+/* El salto al contenido: sólo existe cuando se navega con el teclado. Sin él, para llegar al
+   primer párrafo hay que pasar por los seis enlaces de la barra en cada carga. */
+.salto {
+  position: fixed; top: 8px; left: 50%; z-index: 40;
+  transform: translate(-50%, -160%);
+  padding: 11px 20px; border-radius: 999px;
+  background: var(--white); color: var(--brand);
+  font-size: 14px; font-weight: 600; text-decoration: none;
+  box-shadow: var(--sombra);
+  transition: transform .2s var(--ease);
+}
+.salto:focus { transform: translate(-50%, 0); }
+
+/* Un foco que se ve sobre cualquier fondo: aro oscuro con halo blanco por fuera. El navegador
+   pone uno por omisión, pero sobre el verde de la barra y sobre la aérea casi no se distingue. */
+a:focus-visible, button:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible, video:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, .9);
+}
+.menu a:focus-visible, .portada a:focus-visible {
+  outline-color: var(--white);
+  box-shadow: 0 0 0 4px rgba(4, 38, 43, .55);
+}
+
+/* el h1 no aporta espaciado: el título visible es el logo */
+.portada__titulo { margin: 0; font-size: 0; line-height: 0; }

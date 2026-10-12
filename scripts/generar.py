@@ -40,6 +40,45 @@ def img(url):
     return f'assets/img/{Path(url).name}' if url else ''
 
 
+def medidas(ruta):
+    """El ancho y el alto de un WebP o un PNG, leídos de su cabecera.
+
+    Van en el HTML para que el navegador reserve el hueco antes de bajar la imagen: sin eso el
+    texto baja de golpe cuando cada foto aparece, y la página salta mientras se lee.
+
+    Se LEEN del archivo y no se teclean a propósito. Un tamaño teclado sobrevive al render que
+    lo reemplaza y entonces miente, que es peor que no decir nada. Son treinta líneas de leer
+    cabeceras para no depender de Pillow, que este proyecto no tiene instalado.
+    """
+    try:
+        d = Path(ruta).read_bytes()[:40]
+    except OSError:
+        return None
+    if d[:8] == b'\x89PNG\r\n\x1a\n' and d[12:16] == b'IHDR':
+        return int.from_bytes(d[16:20], 'big'), int.from_bytes(d[20:24], 'big')
+    if d[:4] != b'RIFF' or d[8:12] != b'WEBP':
+        return None
+    tipo = d[12:16]
+    if tipo == b'VP8X':                        # extendido (el que lleva alfa o animación)
+        return (int.from_bytes(d[24:27], 'little') + 1,
+                int.from_bytes(d[27:30], 'little') + 1)
+    if tipo == b'VP8 ':                        # con pérdida, el normal
+        if d[23:26] != b'\x9d\x01\x2a':         # la marca de sincronía del fotograma
+            return None
+        return (int.from_bytes(d[26:28], 'little') & 0x3FFF,
+                int.from_bytes(d[28:30], 'little') & 0x3FFF)
+    if tipo == b'VP8L':                        # sin pérdida
+        bits = int.from_bytes(d[21:25], 'little')
+        return (bits & 0x3FFF) + 1, ((bits >> 14) & 0x3FFF) + 1
+    return None
+
+
+def dim(url):
+    """ width="..." height="..." para esa imagen, o nada si no se pudo leer."""
+    m = medidas(RAIZ / url) if url else None
+    return f' width="{m[0]}" height="{m[1]}"' if m else ''
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -151,21 +190,21 @@ def main():
             for v, t in cifras),
         etapas='\n'.join(
             f'''      <article class="tarjeta">
-        <div class="tarjeta__foto"><img src="{e['foto']}" alt="{esc(e['label'])}" loading="lazy"></div>
+        <div class="tarjeta__foto"><img src="{e['foto']}" alt="{esc(e['label'])}"{dim(e['foto'])} loading="lazy" decoding="async"></div>
         <h3>{esc(e['label'])}</h3><p>{esc(e['texto'])}</p>
       </article>''' for e in etapas),
         plano_img=img((plano or {}).get('url', '')),
         plano_pie=esc((plano or {}).get('label', '')),
         amenidades='\n'.join(
             f'''      <article class="tarjeta">
-        <div class="tarjeta__foto"><img src="{a['foto']}" alt="{esc(a['nombre'])}" loading="lazy"></div>
+        <div class="tarjeta__foto"><img src="{a['foto']}" alt="{esc(a['nombre'])}"{dim(a['foto'])} loading="lazy" decoding="async"></div>
         <h3>{esc(a['nombre'])}</h3><p>{esc(a['texto'])}</p>
         <ul>{''.join(f'<li>{esc(r)}</li>' for r in a['rasgos'])}</ul>
       </article>''' for a in amenidades),
         clips='\n'.join(
             f'''      <article class="clip">
         <a class="clip__abrir" href="{c['clip']}" aria-label="Ver el clip: {esc(c['label'])}">
-          <img src="{c['foto']}" alt="{esc(c['label'])}" loading="lazy">
+          <img src="{c['foto']}" alt="{esc(c['label'])}"{dim(c['foto'])} loading="lazy" decoding="async">
           <span class="clip__play" aria-hidden="true"></span>
           <span class="clip__nombre">{esc(c['label'])}</span>
         </a>
@@ -177,6 +216,10 @@ def main():
         aviso=esc(proyecto.get('disclaimer', '')),
         empresa=esc(proyecto.get('developer', {}).get('name', '')),
         base=esc(base),
+        dim_portada=dim(img(mp['stops'][0]['posterUrl'])),
+        dim_logo=dim(img(p['home']['logoImgUrl'])),
+        dim_plano=dim(img((plano or {}).get('url', ''))),
+        dim_mapa=dim(img((mapa or {}).get('url', ''))),
         og_img=esc(base + 'assets/img/tarjeta-og.jpg'),
         jsonld=json.dumps(ficha, ensure_ascii=False, separators=(',', ':')),
     )
@@ -224,10 +267,21 @@ PLANTILLA = '''<!doctype html>
      que puso Arquitectura en location, y las coordenadas, las del ingreso al proyecto. -->
 <script type="application/ld+json">{jsonld}</script>
 
-<link rel="preload" as="image" href="{portada}">
+<!-- Montserrat desde el propio sitio: la fuente de la marca, y la IP del visitante no viaja
+     a Google por leer una página. Las dos variantes que se ven de entrada van precargadas; el
+     crossorigin NO es opcional en una fuente, aunque sea del mismo sitio. -->
+<link rel="preload" as="font" type="font/woff2" href="assets/fuentes/montserrat-400-latin.woff2" crossorigin>
+<link rel="preload" as="font" type="font/woff2" href="assets/fuentes/montserrat-600-latin.woff2" crossorigin>
+<link rel="stylesheet" href="assets/fuentes/montserrat.css">
+
+<link rel="preload" as="image" href="{portada}" fetchpriority="high">
 <link rel="stylesheet" href="assets/estilos.css">
 </head>
 <body>
+
+<!-- Para quien navega con el teclado: lo primero que se enfoca es un enlace que salta los seis
+     enlaces de la barra y va al contenido. Sólo se ve cuando tiene el foco. -->
+<a class="salto" href="#contenido">Ir al contenido</a>
 
 <!-- La barra va encima de la portada, transparente, y se vuelve verde al dejarla atrás. El logo
      es blanco —es el único que entregó Arquitectura—, así que la barra sólida NO puede ser
@@ -238,7 +292,8 @@ PLANTILLA = '''<!doctype html>
      todas las secciones caben de un toque. -->
 <nav class="menu" aria-label="Secciones">
   <a class="menu__marca" href="#portada" aria-label="{nombre}, ir arriba">
-    <img src="{logo}" alt="{nombre}" width="150" height="40">
+    <!-- alt vacío: el enlace que lo envuelve ya lleva su propia etiqueta -->
+    <img src="{logo}" alt=""{dim_logo}>
   </a>
   <ul class="menu__lista">
     <li><a href="#etapas">El proyecto</a></li>
@@ -254,13 +309,16 @@ PLANTILLA = '''<!doctype html>
   <!-- La foto se ve siempre y de inmediato; el vídeo entra encima cuando ha bajado lo
        suficiente. Si el visitante pidió ahorro de datos, o va por una conexión lenta, o tiene
        el movimiento reducido, el vídeo no se baja: se queda la foto. Eso lo decide main.js. -->
-  <img class="portada__fondo" src="{portada}" alt="Vista aérea de {nombre}">
+  <img class="portada__fondo" src="{portada}" alt="Vista aérea de {nombre}"{dim_portada} fetchpriority="high">
   <video class="portada__video" poster="{portada}" muted loop playsinline preload="none"
          data-720="assets/video/portada-720.mp4" data-1080="assets/video/portada-1080.mp4"
          aria-hidden="true"></video>
   <div class="portada__velo"></div>
   <div class="portada__centro">
-    <img class="portada__logo" src="{logo}" alt="{nombre}">
+    <!-- El logo ES el título de la página: su texto alternativo hace de h1. Antes la página no
+         tenía ningún h1 y para un buscador —o para quien la lee con un lector de pantalla— eso
+         es una página sin nombre. -->
+    <h1 class="portada__titulo"><img class="portada__logo" src="{logo}" alt="{nombre} · {tagline}"{dim_logo}></h1>
     <p class="tagline">{tagline}</p>
     <p class="lead">{descripcion}</p>
     <div class="acciones">
@@ -269,6 +327,8 @@ PLANTILLA = '''<!doctype html>
     </div>
   </div>
 </header>
+
+<main id="contenido">
 
 <section class="seccion cifras" id="cifras">
 {cifras}
@@ -283,7 +343,7 @@ PLANTILLA = '''<!doctype html>
 
 <section class="seccion" id="plano">
   <h2>Dónde está cada cosa</h2>
-  <img class="ancha" src="{plano_img}" alt="{plano_pie}" loading="lazy">
+  <img class="ancha" src="{plano_img}" alt="{plano_pie}"{dim_plano} loading="lazy" decoding="async">
   <p class="pie">{plano_pie}</p>
 </section>
 
@@ -307,7 +367,7 @@ PLANTILLA = '''<!doctype html>
 
 <section class="seccion" id="llegar">
   <h2>Cómo llegar</h2>
-  <img class="ancha" src="{mapa_img}" alt="{mapa_pie}" loading="lazy">
+  <img class="ancha" src="{mapa_img}" alt="{mapa_pie}"{dim_mapa} loading="lazy" decoding="async">
   <p class="pie">{mapa_pie}</p>
 </section>
 
@@ -366,6 +426,8 @@ PLANTILLA = '''<!doctype html>
   </div>
   <p class="nota">{aviso}</p>
 </section>
+
+</main>
 
 <footer class="pie-web">
   <p>{empresa}</p>
