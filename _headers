@@ -8,10 +8,19 @@
 # OJO: en el tour este archivo NO se está aplicando y los medios salen con max-age=14400 (ver
 # consulta 15 del documento de pendientes). Si aquí pasa lo mismo, es el mismo problema de
 # configuración del hosting y conviene resolverlo de una vez para los dos sitios.
+#
+# Y OJO TAMBIÉN: donde la web está publicada hoy —GitHub Pages— este archivo se ignora por
+# completo. Pages pone sus propias cabeceras (unos diez minutos para todo) y no hay forma de
+# cambiarlas. Esto sirve el día que el sitio se mueva a Cloudflare, y hasta entonces queda como
+# la intención escrita, no como algo que esté pasando.
 
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
+
+# las dos formas de pedir lo mismo: la raíz y el archivo
+/
+  Cache-Control: no-cache
 
 /index.html
   Cache-Control: no-cache
@@ -24,3 +33,7 @@
 
 /assets/*.js
   Cache-Control: public, max-age=86400
+
+# el vídeo tampoco lleva huella, pero cambia mucho menos que un render
+/assets/video/*
+  Cache-Control: public, max-age=604800

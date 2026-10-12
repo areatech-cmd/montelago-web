@@ -135,7 +135,13 @@ PLANTILLA = '''<!doctype html>
 <body>
 
 <header class="portada">
+  <!-- La foto se ve siempre y de inmediato; el vídeo entra encima cuando ha bajado lo
+       suficiente. Si el visitante pidió ahorro de datos, o va por una conexión lenta, o tiene
+       el movimiento reducido, el vídeo no se baja: se queda la foto. Eso lo decide main.js. -->
   <img class="portada__fondo" src="{portada}" alt="Vista aérea de {nombre}">
+  <video class="portada__video" poster="{portada}" muted loop playsinline preload="none"
+         data-720="assets/video/portada-720.mp4" data-1080="assets/video/portada-1080.mp4"
+         aria-hidden="true"></video>
   <div class="portada__velo"></div>
   <div class="portada__centro">
     <img class="portada__logo" src="{logo}" alt="{nombre}">

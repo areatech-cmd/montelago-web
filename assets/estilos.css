@@ -33,8 +33,13 @@ body {
   padding: 70px 20px 90px;
   overflow: hidden;
 }
-.portada__fondo, .portada__velo { position: absolute; inset: 0; }
-.portada__fondo { width: 100%; height: 100%; object-fit: cover; }
+.portada__fondo, .portada__video, .portada__velo { position: absolute; inset: 0; }
+.portada__fondo, .portada__video { width: 100%; height: 100%; object-fit: cover; }
+/* el vídeo entra por encima de la foto cuando puede reproducirse, no antes: así no se ve
+   un rectángulo negro mientras baja */
+.portada__video { opacity: 0; transition: opacity .8s var(--ease); }
+.portada__video.visible { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .portada__video { display: none; } }
 .portada__velo {
   /* el texto va encima de la aérea: sin velo no hay contraste para leerlo */
   background: linear-gradient(180deg, rgba(4,38,43,.55), rgba(4,38,43,.28) 45%, rgba(4,38,43,.82));
@@ -101,3 +106,8 @@ body {
   transform: translateX(-50%); z-index: 10;
 }
 .fija:hover { transform: translateX(-50%) translateY(-1px); }
+/* Mientras se ve la portada no hace falta: ahí ya hay un botón igual. La clase la pone el JS,
+   así que sin JS el botón se ve siempre, que es el lado seguro. */
+.fija--oculta { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(12px); }
+.fija { transition: opacity .35s var(--ease), transform .35s var(--ease); }
+@media (prefers-reduced-motion: reduce) { .fija { transition: none; } }

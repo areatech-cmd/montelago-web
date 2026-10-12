@@ -10,12 +10,18 @@ textos e imágenes una vez, al generarse, y después es HTML plano.
 ## Qué hay aquí
 
 ```
-index.html          generado — no editar a mano
-assets/estilos.css  los colores y la retícula
-assets/main.js      lo único con JS: las secciones aparecen al hacer scroll
-assets/img/         renders oficiales copiados del tour (8 MB)
-scripts/generar.py  arma index.html con los datos del tour
+index.html             generado — no editar a mano
+assets/estilos.css     los colores y la retícula
+assets/main.js         el único JS: aparecer al hacer scroll, el botón fijo y el vídeo
+assets/img/            renders oficiales copiados del tour (8 MB)
+assets/video/          la aérea de la portada, en 720 y 1080 (12 MB)
+scripts/generar.py     arma index.html con los datos del tour
+scripts/traer_medios.py  copia las imágenes y comprime el vídeo
+_headers               cuánto puede guardar en caché cada cosa
 ```
+
+El vídeo pesa 12 MB y vive en el repositorio. Cada vez que se vuelva a comprimir, el historial
+se queda también con la copia vieja: conviene no recomprimirlo por gusto.
 
 ## Cómo se actualiza
 
@@ -41,28 +47,35 @@ Es estática: sirve la carpeta y ya. No hay build, ni dependencias, ni Node.
 python -m http.server 4500      # para verla en local
 ```
 
-El repositorio está en **github.com/areatech-cmd/montelago-web** (privado, como el del tour).
+Está en **github.com/areatech-cmd/montelago-web**, repositorio **público**, y se publica sola con
+**GitHub Pages** desde `main`:
 
-### Cloudflare Pages — lo recomendado
+> https://areatech-cmd.github.io/montelago-web/
 
-Es donde ya vive el tour, así que el dominio y los certificados salen solos. Es una conexión que
-hay que hacer una vez desde el panel, con la cuenta de Villacasa:
+Cada `git push` a `main` la actualiza en un par de minutos. No hay que tocar nada más.
+
+### Cuando haya que moverla al dominio de la empresa
+
+Pages está bien para enseñarla y para los anuncios de prueba, pero deja una dirección
+`github.io`. El sitio definitivo debería ir al dominio de Villacasa, y lo más corto es
+**Cloudflare Pages**, que es donde ya vive el tour: ahí el subdominio y el certificado salen
+solos. Es una conexión que se hace una vez desde el panel, con la cuenta de la empresa:
 
 1. Cloudflare → **Workers & Pages** → *Create* → *Pages* → **Connect to Git**.
 2. Elegir el repositorio `montelago-web`.
-3. **Framework preset:** None. **Build command:** dejar vacío. **Output directory:** `/`.
+3. **Framework preset:** None. **Build command:** vacío. **Output directory:** `/`.
    No hay build: la carpeta ya es el sitio.
 4. *Save and Deploy*. Después, en **Custom domains**, el subdominio que se quiera —por ejemplo
    `montelago.condominiosvillacasa.com`.
 
-Desde ahí cada `git push` a `main` publica solo, igual que el tour.
+Los dos sitios pueden convivir: Pages para probar, Cloudflare para la dirección de verdad.
 
-### Alternativas
+### Que el repositorio sea público, qué significa
 
-- **GitHub Pages** no sirve tal cual: en un repositorio privado necesita plan de pago, y esta
-  cuenta es gratuita. Funcionaría haciendo el repositorio público, pero eso expone el código y
-  los renders, y deja un dominio `github.io` en vez del de la empresa.
-- **El VPS** también vale: es una carpeta estática, basta copiarla a la raíz de un virtual host.
+Cualquiera puede leer el código y descargar los renders. Se decidió a sabiendas, porque Pages
+gratis lo exige. Lo que **no** está aquí sigue sin estar: el Excel del inventario con los
+nombres de los clientes y de las asesoras, los precios cash y cualquier credencial. Esta página
+sólo publica lo que de todas formas se le enseña a quien pregunta.
 
 ## Dos reglas que este proyecto hereda del tour
 
