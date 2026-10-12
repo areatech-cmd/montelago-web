@@ -143,6 +143,11 @@ def main():
     wa = (c.get('whatsAppNumber') or '').replace(' ', '').replace('+', '')
     correo = c.get('email', '')
 
+    # El logo en WebP sin pérdida si traer_medios.py lo dejó: mismos píxeles, la mitad del peso
+    logo = img(p['home']['logoImgUrl'])
+    if logo and (RAIZ / logo).with_suffix('.webp').exists():
+        logo = logo.rsplit('.', 1)[0] + '.webp'
+
     # --- Lo que necesitan los buscadores y las tarjetas de los enlaces ---
     base = args.url if args.url.endswith('/') else args.url + '/'
     loc = p.get('location', {})
@@ -184,7 +189,7 @@ def main():
         tagline=esc(proyecto['tagline']),
         descripcion=esc(proyecto['description']),
         portada=img(mp['stops'][0]['posterUrl']),
-        logo=img(p['home']['logoImgUrl']),
+        logo=esc(logo),
         cifras='\n'.join(
             f'      <div class="dato"><strong>{esc(v)}</strong><span>{esc(t)}</span></div>'
             for v, t in cifras),
@@ -217,7 +222,7 @@ def main():
         empresa=esc(proyecto.get('developer', {}).get('name', '')),
         base=esc(base),
         dim_portada=dim(img(mp['stops'][0]['posterUrl'])),
-        dim_logo=dim(img(p['home']['logoImgUrl'])),
+        dim_logo=dim(logo),
         dim_plano=dim(img((plano or {}).get('url', ''))),
         dim_mapa=dim(img((mapa or {}).get('url', ''))),
         og_img=esc(base + 'assets/img/tarjeta-og.jpg'),

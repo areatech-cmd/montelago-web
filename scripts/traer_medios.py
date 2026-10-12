@@ -154,6 +154,19 @@ def main():
         peso_f = sum(p.stat().st_size for p in fuentes.glob('*.woff2'))
         print(f'fuentes: {len(reglas)} variantes · {peso_f / 1024:.0f} KB')
 
+    # --- El logo, en WebP sin pérdida ---
+    # El PNG oficial pesa 59 KB y se baja en cada visita. En WebP SIN PÉRDIDA son 29: los mismos
+    # píxeles exactos, la mitad del peso. No es recomprimir una foto, es cambiar de envase.
+    logo_png = publico / p['home']['logoImgUrl']
+    if logo_png.exists():
+        salida = RAIZ / 'assets' / 'img' / (logo_png.stem + '.webp')
+        subprocess.run(
+            [exe, '-hide_banner', '-loglevel', 'error', '-y', '-i', str(logo_png),
+             '-c:v', 'libwebp', '-lossless', '1', '-compression_level', '6',
+             '-frames:v', '1', str(salida)], check=True)
+        print(f'  {salida.name}  {salida.stat().st_size / 1024:.0f} KB  '
+              f'(del PNG de {logo_png.stat().st_size / 1024:.0f} KB, sin pérdida)')
+
     # --- La imagen de la tarjeta del enlace ---
     # Esta página va a circular por WhatsApp, y WhatsApp no siempre pinta un WebP en la vista
     # previa. Así que la aérea de la portada se guarda además en JPEG y al tamaño que esperan

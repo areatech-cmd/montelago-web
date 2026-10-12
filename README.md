@@ -120,6 +120,14 @@ del sistema y no se parecía. Van tres pesos y sólo la subserie *latin*, que cu
 y ² —todo lo que hay en un texto en español—. Se sirve desde el propio sitio, como en el tour:
 así la IP del visitante no viaja a Google por el hecho de leer una página.
 
+**Lo que pesa la primera carga: 760 KB**, de los cuales 577 son la aérea de la portada. Se midió
+si convenía recomprimirla y **no**: al 60 % de calidad baja a 384 KB, y recomprimir un WebP ya
+comprimido sólo degrada. Es un render oficial a 1920x1080 detrás de un velo, y en un móvil en
+vertical el recorte *cover* necesita más ancho, no menos, así que tampoco sirve una variante
+pequeña. El logo sí bajó de 59 a 29 KB pasándolo a WebP **sin pérdida**: los mismos píxeles
+exactos, la mitad del peso. El vídeo y los clips no cuentan aquí: no se bajan hasta que hace
+falta.
+
 **Se puede recorrer con el teclado.** Lo primero que se enfoca es un salto al contenido, el
 foco se ve sobre cualquier fondo, el logo de la portada hace de `h1` y el formulario marca el
 campo mal escrito con `aria-invalid`, no sólo con un borde rojo que nadie oye.
