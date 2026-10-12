@@ -173,3 +173,45 @@ body {
 html:not(.js) .consulta__o { display: none; }
 /* la trampa de los robots: fuera de la vista, pero no con display:none, que algunos detectan */
 .trampa { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+/* ---------- La barra de secciones ---------- */
+.menu {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+  display: flex; align-items: center; gap: 16px;
+  padding: 9px max(14px, env(safe-area-inset-left)) 9px max(14px, env(safe-area-inset-right));
+  background-color: transparent;
+  /* un velo arriba para que las letras blancas se lean sobre la aérea */
+  background-image: linear-gradient(rgba(4, 38, 43, .5), rgba(4, 38, 43, 0));
+  transition: background-color .3s var(--ease), box-shadow .3s var(--ease);
+}
+/* al dejar la portada: verde marca, que es lo único sobre lo que el logo blanco se ve */
+.menu--solido { background-image: none; background-color: var(--brand); box-shadow: 0 2px 18px rgba(4, 38, 43, .22); }
+.menu__marca { flex: none; display: block; }
+.menu__marca img { display: block; width: auto; height: 30px; }
+.menu__lista {
+  display: flex; gap: 2px; margin: 0; padding: 0; list-style: none;
+  overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.menu__lista::-webkit-scrollbar { display: none; }
+.menu__lista a {
+  display: block; padding: 8px 11px; border-radius: 999px;
+  color: var(--white); text-decoration: none; white-space: nowrap;
+  font-size: 13.5px; font-weight: 500; opacity: .88;
+  transition: background-color .2s, opacity .2s;
+}
+.menu__lista a:hover, .menu__lista a:focus-visible { opacity: 1; background: rgba(255, 255, 255, .14); }
+.menu__lista a[aria-current] { opacity: 1; font-weight: 600; background: rgba(255, 255, 255, .2); }
+@media (max-width: 620px) {
+  .menu { gap: 10px; }
+  .menu__marca img { height: 25px; }
+  .menu__lista a { padding: 7px 9px; font-size: 13px; }
+  /* En un móvil caben seis enlaces a medias (unos 300 px de 470). El borde derecho se desvanece
+     para que se vea que la lista sigue: sin esa pista, «Contacto» no existe para quien no se le
+     ocurra arrastrar. Aun así nadie se queda sin él, porque el botón fijo de abajo lleva allí. */
+  .menu__lista {
+    -webkit-mask-image: linear-gradient(to right, #000 86%, transparent);
+    mask-image: linear-gradient(to right, #000 86%, transparent);
+  }
+}
+/* que el título de la sección no quede debajo de la barra al llegar por un enlace */
+.seccion, .portada { scroll-margin-top: 58px; }

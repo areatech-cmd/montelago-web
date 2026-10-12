@@ -3,6 +3,10 @@
 Una sola página, de la aérea a pantalla completa hasta el formulario, para quien llega de un
 anuncio y no va a recorrer el tour entero. Termina llevando al tour.
 
+Por orden: portada con el vídeo, las cifras, las tres etapas, el plano, las áreas comunes, la
+galería de clips, cómo llegar y el formulario. Arriba una barra con las secciones; abajo, un
+botón de contacto que aparece al dejar la portada.
+
 **Esto es un proyecto aparte del tour.** El tour vive en `../WEB3D` y se publica en
 `montelago-tour.condominiosvillacasa.com`. Esta web no depende de él para funcionar: toma sus
 textos e imágenes una vez, al generarse, y después es HTML plano.

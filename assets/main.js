@@ -34,14 +34,36 @@ if (quieto || !('IntersectionObserver' in window)) {
 // botón se ve siempre: el lado seguro.
 const fijo = document.querySelector('.fija')
 const portada = document.querySelector('.portada')
-if (fijo && portada) {
-  // Sin requestAnimationFrame ni temporizadores: el manejador mide y decide en el acto. Una
-  // versión anterior agrupaba los avisos en un rAF y, donde el navegador no pinta, el «ya lo
-  // pedí» se quedaba puesto y el botón no se movía más. Es una lectura por evento de scroll,
-  // sin escribir nada antes: no hay reflujo que ahorrar.
-  const decidir = () =>
-    // visible en cuanto la portada ha salido más de media pantalla
-    fijo.classList.toggle('fija--oculta', portada.getBoundingClientRect().bottom > innerHeight / 2)
+const barra = document.querySelector('.menu')
+// cada enlace del menú con la sección a la que apunta, resuelto una sola vez
+const enlaces = [...document.querySelectorAll('.menu__lista a')]
+  .map((a) => ({ a, seccion: document.querySelector(a.getAttribute('href')) }))
+  .filter((e) => e.seccion)
+
+if (portada) {
+  // Un ÚNICO manejador para las tres cosas que dependen de dónde está el scroll: el botón fijo,
+  // el fondo de la barra y el enlace marcado. Tres observadores separados harían tres veces el
+  // mismo trabajo y podrían contradecirse.
+  //
+  // Sin requestAnimationFrame ni temporizadores: mide y decide en el acto. Una versión anterior
+  // agrupaba los avisos en un rAF y, donde el navegador no pinta, el «ya lo pedí» se quedaba
+  // puesto y nada se movía más. Son unas pocas lecturas por evento de scroll, sin escribir nada
+  // entre medias: no hay reflujo que ahorrar.
+  let activo = null
+  const decidir = () => {
+    const enPortada = portada.getBoundingClientRect().bottom > innerHeight / 2
+    if (fijo) fijo.classList.toggle('fija--oculta', enPortada)   // en la portada ya hay un botón igual
+    if (barra) barra.classList.toggle('menu--solido', !enPortada)
+
+    // el enlace marcado es el de la última sección que ya cruzó el primer tercio de la pantalla
+    let cual = null
+    for (const e of enlaces) if (e.seccion.getBoundingClientRect().top <= innerHeight * 0.35) cual = e
+    if (cual !== activo) {
+      if (activo) activo.a.removeAttribute('aria-current')
+      if (cual) cual.a.setAttribute('aria-current', 'true')
+      activo = cual
+    }
+  }
   addEventListener('scroll', decidir, { passive: true })
   addEventListener('resize', decidir, { passive: true })
   decidir()

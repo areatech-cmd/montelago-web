@@ -155,7 +155,28 @@ PLANTILLA = '''<!doctype html>
 </head>
 <body>
 
-<header class="portada">
+<!-- La barra va encima de la portada, transparente, y se vuelve verde al dejarla atrás. El logo
+     es blanco —es el único que entregó Arquitectura—, así que la barra sólida NO puede ser
+     blanca: sería un logo invisible. Verde marca y letras blancas, siempre las mismas.
+
+     En pantalla estrecha los enlaces se desplazan de lado en vez de esconderse detrás de un
+     botón de hamburguesa. Un menú que hay que abrir es una cosa más que puede fallar, y aquí
+     todas las secciones caben de un toque. -->
+<nav class="menu" aria-label="Secciones">
+  <a class="menu__marca" href="#portada" aria-label="{nombre}, ir arriba">
+    <img src="{logo}" alt="{nombre}" width="150" height="40">
+  </a>
+  <ul class="menu__lista">
+    <li><a href="#etapas">El proyecto</a></li>
+    <li><a href="#plano">Plano</a></li>
+    <li><a href="#areas">Áreas comunes</a></li>
+    <li><a href="#galeria">Galería</a></li>
+    <li><a href="#llegar">Cómo llegar</a></li>
+    <li><a href="#contacto">Contacto</a></li>
+  </ul>
+</nav>
+
+<header class="portada" id="portada">
   <!-- La foto se ve siempre y de inmediato; el vídeo entra encima cuando ha bajado lo
        suficiente. Si el visitante pidió ahorro de datos, o va por una conexión lenta, o tiene
        el movimiento reducido, el vídeo no se baja: se queda la foto. Eso lo decide main.js. -->
