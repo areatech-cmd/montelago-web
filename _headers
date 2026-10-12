@@ -1,0 +1,26 @@
+# Cabeceras para Cloudflare Pages / Netlify.
+#
+# Las imágenes llevan su nombre de siempre (no van con huella), así que NO se pueden cachear un
+# año: si se reemplaza un render, el visitante seguiría viendo el viejo. Un día es el equilibrio
+# razonable. El HTML no se cachea nunca, para que un cambio de texto o de cifras se vea al
+# momento: la página se regenera cada vez que cambia el inventario.
+#
+# OJO: en el tour este archivo NO se está aplicando y los medios salen con max-age=14400 (ver
+# consulta 15 del documento de pendientes). Si aquí pasa lo mismo, es el mismo problema de
+# configuración del hosting y conviene resolverlo de una vez para los dos sitios.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+
+/index.html
+  Cache-Control: no-cache
+
+/assets/img/*
+  Cache-Control: public, max-age=86400
+
+/assets/*.css
+  Cache-Control: public, max-age=86400
+
+/assets/*.js
+  Cache-Control: public, max-age=86400

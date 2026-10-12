@@ -41,8 +41,28 @@ Es estática: sirve la carpeta y ya. No hay build, ni dependencias, ni Node.
 python -m http.server 4500      # para verla en local
 ```
 
-Para publicarla, cualquier hosting estático sirve (Cloudflare Pages, Netlify, el mismo VPS).
-Conviene darle su propio dominio o un subdominio, no colgarla del tour.
+El repositorio está en **github.com/areatech-cmd/montelago-web** (privado, como el del tour).
+
+### Cloudflare Pages — lo recomendado
+
+Es donde ya vive el tour, así que el dominio y los certificados salen solos. Es una conexión que
+hay que hacer una vez desde el panel, con la cuenta de Villacasa:
+
+1. Cloudflare → **Workers & Pages** → *Create* → *Pages* → **Connect to Git**.
+2. Elegir el repositorio `montelago-web`.
+3. **Framework preset:** None. **Build command:** dejar vacío. **Output directory:** `/`.
+   No hay build: la carpeta ya es el sitio.
+4. *Save and Deploy*. Después, en **Custom domains**, el subdominio que se quiera —por ejemplo
+   `montelago.condominiosvillacasa.com`.
+
+Desde ahí cada `git push` a `main` publica solo, igual que el tour.
+
+### Alternativas
+
+- **GitHub Pages** no sirve tal cual: en un repositorio privado necesita plan de pago, y esta
+  cuenta es gratuita. Funcionaría haciendo el repositorio público, pero eso expone el código y
+  los renders, y deja un dominio `github.io` en vez del de la empresa.
+- **El VPS** también vale: es una carpeta estática, basta copiarla a la raíz de un virtual host.
 
 ## Dos reglas que este proyecto hereda del tour
 
