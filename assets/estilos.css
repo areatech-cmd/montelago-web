@@ -1,0 +1,103 @@
+/* Montelago · web de venta. Los colores son los de la marca, los mismos del tour. */
+:root {
+  --brand: #044048;
+  --brand-soft: #e6eff0;
+  --ink: #0e2a2e;
+  --muted: #546769;
+  --white: #fff;
+  --radio: 14px;
+  --sombra: 0 10px 30px rgba(4, 38, 43, 0.1);
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --font: 'Montserrat', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+body {
+  margin: 0;
+  background: var(--white);
+  color: var(--ink);
+  font-family: var(--font);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Portada ---------- */
+.portada {
+  position: relative;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 70px 20px 90px;
+  overflow: hidden;
+}
+.portada__fondo, .portada__velo { position: absolute; inset: 0; }
+.portada__fondo { width: 100%; height: 100%; object-fit: cover; }
+.portada__velo {
+  /* el texto va encima de la aérea: sin velo no hay contraste para leerlo */
+  background: linear-gradient(180deg, rgba(4,38,43,.55), rgba(4,38,43,.28) 45%, rgba(4,38,43,.82));
+}
+.portada__centro { position: relative; max-width: 760px; text-align: center; color: var(--white); }
+.portada__logo { width: min(320px, 68vw); height: auto; }
+.tagline {
+  margin: 10px 0 0; font-size: 13px; font-weight: 600;
+  letter-spacing: .3em; text-transform: uppercase; opacity: .9;
+}
+.lead { margin: 22px auto 0; max-width: 56ch; font-size: clamp(15px, 1.9vw, 19px); }
+
+/* ---------- Botones ---------- */
+.acciones { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 30px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 9px;
+  min-height: 48px; padding: 0 24px;
+  border-radius: 999px; background: rgba(255,255,255,.93); color: var(--brand);
+  font-size: 14px; font-weight: 600; text-decoration: none;
+  box-shadow: var(--sombra);
+  transition: transform .2s var(--ease), background-color .2s;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn--primario { background: var(--brand); color: var(--white); }
+
+/* ---------- Secciones ---------- */
+.seccion { max-width: 1120px; margin: 0 auto; padding: clamp(56px, 9vw, 110px) 20px; }
+.seccion h2 { margin: 0 0 22px; font-size: clamp(24px, 3.4vw, 38px); color: var(--brand); }
+.pie { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
+.ancha { width: 100%; height: auto; border-radius: var(--radio); box-shadow: var(--sombra); }
+
+/* Las secciones aparecen al entrar en pantalla. Si el JS no corre, se ven igual: la clase
+   que las oculta la pone el propio JS. Una animación que falla no deja la página en blanco. */
+.js .aparece { opacity: 0; transform: translateY(18px); transition: opacity .6s var(--ease), transform .6s var(--ease); }
+.js .aparece.dentro { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .js .aparece { opacity: 1; transform: none; transition: none; }
+}
+
+/* ---------- Cifras ---------- */
+.cifras { display: flex; flex-wrap: wrap; gap: clamp(20px, 5vw, 64px); justify-content: center; text-align: center; }
+.dato strong { display: block; font-size: clamp(30px, 5vw, 50px); font-weight: 700; color: var(--brand); line-height: 1.05; }
+.dato span { display: block; margin-top: 4px; color: var(--muted); font-size: 13px; }
+
+/* ---------- Tarjetas ---------- */
+.rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 26px; }
+.tarjeta__foto { aspect-ratio: 16/10; border-radius: var(--radio); overflow: hidden; background: var(--brand-soft); }
+.tarjeta__foto img { width: 100%; height: 100%; object-fit: cover; }
+.tarjeta h3 { margin: 14px 0 6px; font-size: 18px; color: var(--brand); }
+.tarjeta p { margin: 0; color: var(--muted); font-size: 14px; }
+.tarjeta ul { margin: 10px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
+.tarjeta ul:empty { display: none; }
+
+/* ---------- Cierre y pie ---------- */
+.cierre { max-width: none; background: var(--brand-soft); text-align: center; }
+.cierre > p { margin: 0 auto; max-width: 50ch; color: var(--muted); }
+.nota { margin: 26px auto 0; max-width: 70ch; color: var(--muted); font-size: 11.5px; }
+.pie-web { padding: 28px 20px calc(96px + env(safe-area-inset-bottom)); text-align: center; color: var(--muted); font-size: 13px; }
+.pie-web a { color: var(--brand); }
+
+/* La reserva, siempre a mano */
+.fija {
+  position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom));
+  transform: translateX(-50%); z-index: 10;
+}
+.fija:hover { transform: translateX(-50%) translateY(-1px); }
