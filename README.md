@@ -12,7 +12,8 @@ textos e imágenes una vez, al generarse, y después es HTML plano.
 ```
 index.html             generado — no editar a mano
 assets/estilos.css     los colores y la retícula
-assets/main.js         el único JS: aparecer al scroll, el botón fijo, el vídeo y la galería
+assets/main.js         el único JS: aparecer al scroll, el botón fijo, el vídeo,
+                       la galería y el formulario
 assets/img/            renders oficiales copiados del tour (8 MB)
 assets/video/          la aérea de la portada (720 y 1080) y los 7 clips en 720 (16 MB)
 scripts/generar.py     arma index.html con los datos del tour
@@ -101,6 +102,12 @@ precios en absoluto: lleva a preguntar.
 - **Teléfono y redes sociales.** En los datos del tour están marcados como EJEMPLO y las redes
   apuntan a `facebook.com` a secas. Por eso aquí sólo salen el WhatsApp y el correo, que sí
   están confirmados. Son las consultas 11 y 14 del documento de pendientes.
-- **Formulario propio.** Hoy el botón lleva a WhatsApp y a correo. Un formulario con captura de
-  datos necesita decidir dónde aterrizan esos datos (el tour los manda a WhatsApp) y un aviso de
-  privacidad con el RUC de la empresa, que también está pendiente.
+- **Dónde aterrizan las consultas.** El formulario ya está, pero no envía a ningún servidor:
+  arma el mensaje y abre WhatsApp con todo escrito, y lo manda la persona. Se hizo así a
+  propósito —esta página es estática y no tiene a dónde enviar nada—, y tiene una ventaja: al no
+  guardar datos, no hace falta pedir autorización ni publicar un aviso de privacidad.
+
+  El día que Administración decida que las consultas van a un registro (una hoja, el CRM, Odoo),
+  hay que añadir **la casilla de autorización de datos y un aviso de privacidad con el RUC**, que
+  sigue pendiente. El formato del mensaje es ya el mismo que usa el tour (`sendLead` en
+  `src/project.js`), así que a Comercial le llegan iguales vengan de donde vengan.

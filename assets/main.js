@@ -116,3 +116,95 @@ if (galeria) {
     video.play().catch(() => {}) // el clic ya es permiso, pero si el navegador dice no, quedan los controles
   })
 }
+
+/* ---------- El formulario: arma el mensaje y abre WhatsApp ---------- */
+// Esta página es estática y no tiene a dónde enviar un formulario, así que no finge tenerlo:
+// recoge los datos, escribe el mensaje y abre WhatsApp con todo puesto. El mensaje lo manda la
+// persona desde su propio WhatsApp. Por eso aquí no se guarda nada y no hace falta pedir
+// autorización de datos: no hay datos que custodiar.
+//
+// El día que Administración decida dónde aterrizan las consultas de verdad, esto cambia: hará
+// falta la casilla de autorización y un aviso de privacidad con el RUC de la empresa. Mientras
+// no exista ese sitio, prometer «te contactaremos» sería mentir.
+//
+// El formato del mensaje es EL MISMO que usa el tour (sendLead en src/project.js), para que a
+// Comercial le lleguen las consultas iguales vengan de donde vengan.
+const consulta = document.querySelector('#consulta')
+if (consulta) {
+  const SALTO = String.fromCharCode(10)
+  const dato = (n) => consulta.elements[n]
+  const campoDe = (n) => dato(n).closest('.campo')
+
+  // El correo y el teléfono los valida el propio navegador por el type= del campo; lo único
+  // nuestro es exigir que el teléfono tenga dígitos de verdad y el nombre, dos letras.
+  const reglas = {
+    nombre: (v) => v.trim().length >= 2 || 'Escribe tu nombre',
+    telefono: (v) =>
+      (dato('telefono').validity.valid && v.replace(/[^0-9]/g, '').length >= 7) ||
+      'Escribe un teléfono válido',
+    correo: (v) => dato('correo').validity.valid || 'Escribe un correo válido',
+  }
+
+  const revisar = (n) => {
+    const fallo = reglas[n](dato(n).value)
+    const campo = campoDe(n)
+    campo.classList.toggle('mal', fallo !== true)
+    consulta.querySelector('[data-error="' + n + '"]').textContent = fallo === true ? '' : fallo
+    return fallo === true
+  }
+
+  // Mientras no se haya intentado enviar no se regaña a nadie; después, cada campo se corrige
+  // en cuanto se arregla.
+  let intentado = false
+  Object.keys(reglas).forEach((n) => {
+    dato(n).addEventListener('input', () => intentado && revisar(n))
+    dato(n).addEventListener('blur', () => intentado && revisar(n))
+  })
+
+  consulta.addEventListener('submit', (ev) => {
+    ev.preventDefault()
+    intentado = true
+    const malos = Object.keys(reglas).filter((n) => !revisar(n))
+    if (malos.length) {
+      const primero = dato(malos[0])
+      primero.focus()
+      primero.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      return
+    }
+    if (dato('web').value) return // lo llenó un robot: no se abre nada
+
+    const texto = [
+      'Consulta desde la web de Montelago',
+      'Interés: ' + dato('interes').value,
+      'Nombre: ' + dato('nombre').value.trim(),
+      'Correo: ' + dato('correo').value.trim(),
+      'Teléfono: ' + dato('telefono').value.trim(),
+      dato('mensaje').value.trim() && 'Mensaje: ' + dato('mensaje').value.trim(),
+    ]
+      .filter(Boolean)
+      .join(SALTO)
+
+    // window.open va AQUÍ, dentro del clic y antes de cualquier espera: si se retrasa, el
+    // navegador lo toma por ventana emergente y lo bloquea. Es la misma razón por la que el
+    // tour abre WhatsApp antes de guardar nada.
+    const wa = consulta.dataset.wa
+    const ventana = wa && window.open('https://wa.me/' + wa + '?text=' + encodeURIComponent(texto), '_blank', 'noopener')
+
+    if (!ventana) {
+      // Sin WhatsApp —o con las ventanas bloqueadas— se va por correo, que no se puede bloquear.
+      const correo = consulta.dataset.correo
+      if (correo) {
+        location.href =
+          'mailto:' + correo +
+          '?subject=' + encodeURIComponent('Consulta desde la web de Montelago') +
+          '&body=' + encodeURIComponent(texto)
+      }
+      return
+    }
+
+    const gracias = document.createElement('p')
+    gracias.className = 'consulta__gracias'
+    gracias.textContent = 'Abrimos tu mensaje en WhatsApp con los datos puestos. Sólo falta que lo envíes.'
+    consulta.querySelector('.consulta__nota').replaceWith(gracias)
+  })
+}

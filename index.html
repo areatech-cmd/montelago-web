@@ -2,6 +2,9 @@
 <html lang="es-PE">
 <head>
 <meta charset="utf-8">
+<!-- esta línea va aquí y no en main.js: marca que hay JS ANTES de pintar, para que lo que
+     sólo sirve con JS (el formulario) no aparezca y desaparezca. -->
+<script>document.documentElement.classList.add('js')</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Montelago · Condominio Club</title>
 <meta name="description" content="Montelago es un condominio ecoamigable diseñado para brindar una experiencia de vida en contacto con la naturaleza, integrando espacios residenciales, recreativos y de bienestar en un entorno sostenible.">
@@ -160,6 +163,52 @@
 <section class="seccion cierre" id="contacto">
   <h2>¿Quieres uno?</h2>
   <p>Escríbenos y te contamos qué lotes quedan, sus medidas y las formas de pago.</p>
+
+  <!-- El formulario sólo aparece si hay JS, porque es JS quien arma el mensaje: un formulario
+       sin sitio a donde enviar sería un botón que no hace nada. Sin JS quedan los dos enlaces
+       de abajo, que funcionan solos. -->
+  <form class="consulta" id="consulta" novalidate data-wa="51913401447" data-correo="ventas@condominiosvillacasa.com">
+    <div class="consulta__fila">
+      <label class="campo">
+        <span>Nombre</span>
+        <input name="nombre" type="text" autocomplete="name" required>
+        <small data-error="nombre"></small>
+      </label>
+      <label class="campo">
+        <span>Teléfono</span>
+        <input name="telefono" type="tel" autocomplete="tel" inputmode="tel" required>
+        <small data-error="telefono"></small>
+      </label>
+    </div>
+    <div class="consulta__fila">
+      <label class="campo">
+        <span>Correo</span>
+        <input name="correo" type="email" autocomplete="email" inputmode="email" required>
+        <small data-error="correo"></small>
+      </label>
+      <label class="campo">
+        <span>¿Qué te interesa?</span>
+        <select name="interes">
+          <option>Un lote en la Etapa I</option>
+          <option>La Etapa II</option>
+          <option>La Etapa III</option>
+          <option>Las áreas comunes</option>
+          <option>Todavía no lo sé</option>
+        </select>
+      </label>
+    </div>
+    <label class="campo">
+      <span>Mensaje <em>(opcional)</em></span>
+      <textarea name="mensaje" rows="3" placeholder="Por ejemplo: busco desde 300 m², con vista a la laguna."></textarea>
+    </label>
+    <!-- trampa para robots: nadie la ve, y quien la llene no es una persona -->
+    <div class="trampa" aria-hidden="true"><label>No escribir aquí<input name="web" tabindex="-1" autocomplete="off"></label></div>
+    <button class="btn btn--primario consulta__enviar" type="submit">Enviar por WhatsApp</button>
+    <p class="consulta__nota">Se abre WhatsApp con tus datos ya escritos; el mensaje lo envías tú.
+       Esta página no guarda nada de lo que escribas.</p>
+  </form>
+
+  <p class="consulta__o">o escríbenos directo</p>
   <div class="acciones">
     <a class="btn btn--primario" href="https://wa.me/51913401447" target="_blank" rel="noopener">WhatsApp</a>
     <a class="btn" href="mailto:ventas@condominiosvillacasa.com">ventas@condominiosvillacasa.com</a>
