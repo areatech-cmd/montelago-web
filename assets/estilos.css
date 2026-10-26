@@ -1,14 +1,38 @@
-/* Montelago · web de venta. Los colores son los de la marca, los mismos del tour. */
+/* Montelago · web de venta.
+   La composición sigue la de damare.gt —oscuro, mucha imagen, poco texto, mayúsculas finas y
+   espaciadas, un acento manuscrito— pero con los colores de Montelago, los mismos del tour
+   (project.json → theme): el verde azulado de la marca en vez del azul marino. */
+
+/* La manuscrita del acento. Allura, licencia OFL (el texto va al lado, en allura-OFL.txt), sólo
+   la subserie latin y servida desde aquí, como la Montserrat: la IP del visitante no viaja a
+   Google. No se precarga: sale en la segunda sección. Con «swap», mientras llega se ve la
+   cursiva del sistema, que ocupa parecido y no hace saltar el texto. */
+@font-face {
+  font-family: 'Allura';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fuentes/allura-400-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 :root {
-  --brand: #044048;
-  --brand-soft: #e6eff0;
-  --ink: #0e2a2e;
-  --muted: #546769;
-  --white: #fff;
-  --radio: 14px;
-  --sombra: 0 10px 30px rgba(4, 38, 43, 0.1);
+  --marca: #044048;
+  --marca-clara: #0B5E68;
+  --tinta: #0E2A2E;
+  /* el arena del acento: es lo único cálido de la página, y por eso se usa poco. Sobre el
+     verde de la marca (el fondo más claro de la página) da 6,9:1, de sobra para AA. */
+  --arena: #DCC7A1;
+  --blanco: #fff;
+  /* el texto secundario: blanco al 80 %, que sobre el verde de la marca (el peor caso) da 7,9:1 */
+  --suave: rgba(255, 255, 255, 0.8);
+  --linea: rgba(255, 255, 255, 0.28);
+  --error: #FFB8A8;
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
-  --font: 'Montserrat', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --sans: 'Montserrat', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --mano: 'Allura', 'Segoe Script', 'Brush Script MT', cursive;
+  /* el espaciado de las mayúsculas, el rasgo que más define la referencia */
+  --abierto: 0.28em;
 }
 
 * { box-sizing: border-box; }
@@ -17,22 +41,137 @@ html { scroll-behavior: smooth; }
 
 body {
   margin: 0;
-  background: var(--white);
-  color: var(--ink);
-  font-family: var(--font);
-  line-height: 1.6;
+  background: var(--marca);
+  color: var(--blanco);
+  font-family: var(--sans);
+  font-weight: 400;
+  line-height: 1.65;
   -webkit-font-smoothing: antialiased;
 }
+img { max-width: 100%; }
+a { color: inherit; }
+
+/* Para lo que tiene que estar para el lector de pantalla pero no a la vista */
+.oculto {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+
+/* Las mayúsculas pequeñas y abiertas que van encima de cada título */
+.antetitulo {
+  margin: 0 0 14px;
+  color: var(--arena);
+  font-size: 12px; font-weight: 500;
+  letter-spacing: var(--abierto); text-transform: uppercase;
+}
+.manuscrita {
+  margin: 0;
+  color: var(--arena);
+  font-family: var(--mano); font-weight: 400;
+  font-size: clamp(44px, 7vw, 84px); line-height: 1.02;
+  letter-spacing: 0; text-transform: none;
+}
+.manuscrita--chica { font-size: clamp(38px, 5vw, 56px); margin-bottom: 4px; }
+
+/* ---------- Botones ---------- */
+/* Una píldora de borde fino, como la «+ RESERVA» de la referencia. El relleno blanco es para el
+   que envía: es el único que tiene que ganar a todo lo demás. */
+.boton {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 48px; max-width: 100%; padding: 0 28px;
+  border: 1px solid var(--blanco); border-radius: 999px;
+  background: var(--blanco); color: var(--marca);
+  font: 600 12.5px/1.2 var(--sans); letter-spacing: 0.2em; text-transform: uppercase;
+  text-align: center; text-decoration: none; cursor: pointer;
+  transition: background-color .25s var(--ease), color .25s var(--ease);
+}
+.boton:hover { background: transparent; color: var(--blanco); }
+.boton span { font-size: 18px; font-weight: 300; letter-spacing: 0; }
+.boton--borde { background: transparent; color: var(--blanco); }
+.boton--borde:hover { background: var(--blanco); color: var(--marca); }
+
+/* ---------- La píldora de arriba ---------- */
+.cabecera {
+  position: fixed; top: 0; left: 0; z-index: 30;
+  padding: max(14px, env(safe-area-inset-top)) 0 0 max(14px, env(safe-area-inset-left));
+}
+.pildora {
+  display: flex; align-items: center; gap: 4px; padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 999px;
+  /* translúcida sobre la aérea; sobre las secciones oscuras se ve como un vidrio. El color de
+     fondo ya basta para leer aunque el navegador no sepa desenfocar. */
+  background: rgba(4, 64, 72, 0.55);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+.pildora__menu {
+  display: grid; place-items: center; width: 42px; height: 42px; padding: 0;
+  border: 0; border-radius: 50%; background: transparent; color: var(--blanco); cursor: pointer;
+}
+.pildora__menu[hidden] { display: none; }
+.pildora__menu:hover { background: rgba(255, 255, 255, 0.14); }
+.hamburguesa, .hamburguesa > span, .hamburguesa::before, .hamburguesa::after {
+  display: block; width: 18px; height: 1.5px; background: currentColor;
+  transition: transform .3s var(--ease), opacity .2s;
+}
+.hamburguesa { position: relative; background: transparent; }
+.hamburguesa::before, .hamburguesa::after { content: ''; position: absolute; left: 0; }
+.hamburguesa::before { top: -6px; }
+.hamburguesa::after { top: 6px; }
+.hamburguesa > span { position: absolute; top: 0; left: 0; }
+/* abierta, la hamburguesa se vuelve una equis: el mismo botón cierra */
+[aria-expanded="true"] .hamburguesa > span { opacity: 0; }
+[aria-expanded="true"] .hamburguesa::before { transform: translateY(6px) rotate(45deg); }
+[aria-expanded="true"] .hamburguesa::after { transform: translateY(-6px) rotate(-45deg); }
+.pildora__cta {
+  display: inline-flex; align-items: center; min-height: 42px; padding: 0 18px;
+  border-radius: 999px; background: var(--blanco); color: var(--marca);
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase;
+  text-decoration: none; white-space: nowrap;
+}
+.pildora__cta:hover { background: var(--arena); }
+
+/* ---------- El menú ---------- */
+/* Sin JS: una lista de enlaces al final de la página, antes del pie. */
+.menu { padding: 40px 20px 0; text-align: center; background: var(--tinta); }
+.menu__lista { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 22px; margin: 0; padding: 0; list-style: none; }
+.menu a {
+  display: inline-block; padding: 8px 0;
+  font-size: 12px; font-weight: 500; letter-spacing: var(--abierto); text-transform: uppercase;
+  text-decoration: none; color: var(--suave);
+}
+.menu a:hover, .menu a[aria-current] { color: var(--blanco); }
+.menu__tour { margin: 6px 0 0; }
+.menu__tour a { color: var(--arena); }
+
+/* Con JS: el panel a pantalla completa que abre la hamburguesa. La clase la pone main.js, así
+   que si el JS no llega a correr, el menú se queda abajo como lista y no desaparece. */
+.menu--panel {
+  position: fixed; inset: 0; z-index: 25;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 90px 24px 40px; background: rgba(14, 42, 46, 0.97);
+  opacity: 0; visibility: hidden;
+  transition: opacity .35s var(--ease), visibility .35s;
+}
+.menu--panel.abierto { opacity: 1; visibility: visible; }
+.menu--panel .menu__lista { flex-direction: column; gap: 6px; }
+.menu--panel .menu__lista a {
+  padding: 10px 0; color: var(--blanco);
+  font-size: clamp(18px, 3.2vw, 26px); font-weight: 300;
+}
+.menu--panel .menu__lista a:hover { color: var(--arena); }
+.menu--panel .menu__tour { margin-top: 30px; }
+@media (prefers-reduced-motion: reduce) { .menu--panel { transition: none; } }
+/* con el menú abierto la página de detrás no se desplaza */
+.menu-abierto { overflow: hidden; }
 
 /* ---------- Portada ---------- */
 .portada {
   position: relative;
   min-height: 100vh;   /* para los navegadores que todavía no entienden svh */
   min-height: 100svh;
-  display: grid;
-  place-items: center;
-  padding: 70px 20px 90px;
-  overflow: hidden;
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+  padding: 26px 20px 40px;
+  overflow: hidden; text-align: center;
 }
 .portada__fondo, .portada__video, .portada__velo { position: absolute; inset: 0; }
 .portada__fondo, .portada__video { width: 100%; height: 100%; object-fit: cover; }
@@ -42,249 +181,359 @@ body {
 .portada__video.visible { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .portada__video { display: none; } }
 .portada__velo {
-  /* el texto va encima de la aérea: sin velo no hay contraste para leerlo */
-  background: linear-gradient(180deg, rgba(4,38,43,.55), rgba(4,38,43,.28) 45%, rgba(4,38,43,.82));
+  /* oscuro arriba (la marca) y sobre todo abajo (el titular); en medio se deja ver la aérea */
+  background: linear-gradient(180deg, rgba(14, 42, 46, .6) 0%, rgba(14, 42, 46, .08) 30%,
+                                      rgba(14, 42, 46, .1) 55%, rgba(14, 42, 46, .82) 100%);
 }
-.portada__centro { position: relative; max-width: 760px; text-align: center; color: var(--white); }
-.portada__logo { width: min(320px, 68vw); height: auto; }
-/* El logo oficial ya trae «CONDOMINIO CLUB» escrito debajo: el lema en texto, justo después,
-   se leía dos veces seguidas. Se oculta a la vista y también al lector de pantalla, porque el
-   texto alternativo del logo —que hace de h1— ya lo dice. Se deja en el HTML por si algún día
-   el logo llega sin lema: basta con quitar esta línea. */
-.tagline { display: none; }
-.tagline {
-  margin: 10px 0 0; font-size: 13px; font-weight: 600;
-  letter-spacing: .3em; text-transform: uppercase; opacity: .9;
+.portada__marca, .portada__titular, .portada__bajar { position: relative; }
+/* el h1 no aporta espaciado: el título visible es el logo */
+.portada__marca { margin: 0; font-size: 0; line-height: 0; }
+/* En el móvil el logo baja un poco para no pisarse con la píldora de la izquierda */
+.portada__logo { width: clamp(120px, 15vw, 190px); height: auto; margin-top: 52px; }
+@media (min-width: 700px) { .portada__logo { margin-top: 0; } }
+.portada__titular { margin: auto 0 0; padding-bottom: 28px; }
+.portada__antetitulo, .portada__grande { display: block; text-transform: uppercase; }
+.portada__antetitulo {
+  font-size: clamp(11px, 1.3vw, 14px); font-weight: 500; letter-spacing: var(--abierto);
+  color: var(--blanco);
 }
-.lead {
-  margin: 22px auto 0; max-width: 56ch; font-size: clamp(15px, 1.9vw, 19px);
-  /* el velo es más claro justo a media altura, que es donde cae este párrafo; sobre las zonas
-     de arena de la aérea las letras blancas perdían contraste. Una sombra suave lo asegura. */
-  text-shadow: 0 1px 14px rgba(4, 38, 43, .7), 0 1px 2px rgba(4, 38, 43, .5);
+.portada__grande {
+  margin-top: 12px;
+  font-size: clamp(30px, 6.4vw, 84px); font-weight: 300; line-height: 1.05;
+  letter-spacing: 0.14em;
+  /* la última letra arrastra su espaciado a la derecha y el titular se ve descentrado */
+  margin-right: -0.14em;
+  text-shadow: 0 2px 24px rgba(14, 42, 46, .5);
 }
+/* La pista de que hay más abajo: una línea que baja. Quieta si se pidió menos movimiento. */
+.portada__bajar { display: block; width: 44px; height: 44px; }
+.portada__bajar span {
+  position: absolute; left: 50%; top: 4px; width: 1px; height: 36px;
+  background: linear-gradient(var(--blanco), transparent);
+  animation: bajar 2.2s var(--ease) infinite;
+}
+@keyframes bajar { 0% { transform: scaleY(0); transform-origin: top; } 50% { transform: scaleY(1); transform-origin: top; } 51% { transform-origin: bottom; } 100% { transform: scaleY(0); transform-origin: bottom; } }
+@media (prefers-reduced-motion: reduce) { .portada__bajar span { animation: none; } }
 
-/* ---------- Botones ---------- */
-.acciones { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 30px; }
-.btn {
-  display: inline-flex; align-items: center; gap: 9px;
-  min-height: 48px; padding: 0 24px;
-  border-radius: 999px; background: rgba(255,255,255,.93); color: var(--brand);
-  font-size: 14px; font-weight: 600; text-decoration: none;
-  box-shadow: var(--sombra);
-  transition: transform .2s var(--ease), background-color .2s;
+/* ---------- El lema ---------- */
+.lema {
+  position: relative; overflow: hidden;
+  display: grid; place-items: center;
+  min-height: 92vh; min-height: 92svh;
+  padding: 90px 22px;
+  text-align: center;
 }
-.btn:hover { transform: translateY(-1px); }
-/* Un botón no puede ser más ancho que la pantalla. Con «Recorrer el proyecto» dentro y 24 px de
-   aire a cada lado, por debajo de unos 300 px de ancho se salía. Ningún teléfono mide tan poco,
-   pero quien tenga la letra del sistema grande, o el día que una etiqueta se alargue, sí. */
-.btn { max-width: 100%; text-align: center; }
-@media (max-width: 380px) { .btn { padding: 0 16px; font-size: 13.5px; } }
-/* El fijo NO se centra con left:50% a secas: un elemento fijo con left:50% sólo tiene la mitad
-   de la pantalla para crecer, y en un móvil de 390 px «Quiero información» se partía en dos
-   líneas. Se ancla a los dos bordes y se centra con margin:auto sobre su propio ancho. */
-.fija { width: max-content; max-width: calc(100vw - 28px); white-space: nowrap; }
-.btn--primario { background: var(--brand); color: var(--white); }
+.lema__fondo, .lema__video, .lema__velo { position: absolute; inset: 0; width: 100%; height: 100%; }
+.lema__fondo, .lema__video { object-fit: cover; }
+.lema__video { opacity: 0; transition: opacity 1s var(--ease); }
+.lema__video.visible { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .lema__video { display: none; } }
+/* velo verde oscuro: el texto blanco se lee igual sobre el agua que sobre la arena del render */
+.lema__velo { background: rgba(14, 42, 46, 0.66); }
+.lema__texto { position: relative; max-width: 640px; }
+.lema__texto p { margin: 28px auto 34px; max-width: 54ch; font-size: clamp(15px, 1.6vw, 18px); font-weight: 300; }
+
+/* ---------- Las áreas a pantalla completa ---------- */
+/* Como el lema: la toma oficial de fondo, velo, y el texto abajo a la izquierda como en la
+   referencia. El velo va más cargado abajo, que es donde está el texto. */
+.ambiente {
+  position: relative; overflow: hidden;
+  display: flex; align-items: flex-end;
+  min-height: 88vh; min-height: 88svh;
+  padding: 90px 20px clamp(48px, 7vw, 90px);
+}
+.ambiente__fondo, .ambiente__video, .ambiente__velo { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ambiente__fondo, .ambiente__video { object-fit: cover; }
+.ambiente__video { opacity: 0; transition: opacity 1s var(--ease); }
+.ambiente__video.visible { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .ambiente__video { display: none; } }
+.ambiente__velo {
+  background: linear-gradient(0deg, rgba(14, 42, 46, .9) 0%, rgba(14, 42, 46, .55) 40%, rgba(14, 42, 46, .1) 75%),
+              linear-gradient(90deg, rgba(14, 42, 46, .45) 0%, rgba(14, 42, 46, 0) 60%);
+}
+.ambiente__texto { position: relative; width: 100%; max-width: 1140px; margin: 0 auto; }
+.ambiente__texto > * { max-width: 560px; }
+.ambiente h2 {
+  margin: 0 0 14px;
+  font-size: clamp(26px, 4vw, 48px); font-weight: 300; line-height: 1.12;
+  letter-spacing: .12em; text-transform: uppercase;
+}
+.ambiente p { margin: 0; font-size: clamp(14px, 1.5vw, 16px); }
+.ambiente ul {
+  display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 18px 0 0; padding: 0; list-style: none;
+  color: var(--suave); font-size: 11px; letter-spacing: .16em; text-transform: uppercase;
+}
+.ambiente li { padding-bottom: 3px; border-bottom: 1px dashed var(--linea); }
+.ambiente ul:empty { display: none; }
+
+/* ---------- El recorrido ---------- */
+/* Sin JS (o hasta que main.js lo arma): la aérea a todo el ancho y la lista de puntos debajo. */
+.recorrido { position: relative; background: var(--tinta); }
+.recorrido__lienzo { position: relative; }
+.recorrido__img { display: block; width: 100%; height: auto; }
+.recorrido__pines { display: none; }
+.recorrido__texto { max-width: 1120px; margin: 0 auto; padding: 56px 20px 70px; }
+.recorrido__pasos {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  gap: 28px 32px; margin: 18px 0 0; padding: 0; list-style: none;
+}
+.paso h3 {
+  margin: 6px 0 8px; padding-bottom: 6px;
+  font-size: 14px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase;
+  border-bottom: 1px dashed var(--linea);
+}
+.paso p { margin: 0; color: var(--suave); font-size: 14px; }
+.paso__n { color: var(--arena); font-size: 11px; letter-spacing: 0.2em; }
+/* La vista general es la idea de la cámara que se aleja: en la lista quieta sobra */
+.recorrido:not(.recorrido--viaje) .paso[data-paso="0"] { display: none; }
+
+/* Los puntos sobre la aérea, cuando main.js los ha colocado (con viaje o quietos).
+   --x e --y son fracciones de la imagen; --z es el zoom de la cámara, que se deshace en cada
+   punto para que el texto mida siempre lo mismo en pantalla. */
+.recorrido--viaje .recorrido__pines, .recorrido--quieto .recorrido__pines { display: block; position: absolute; inset: 0; }
+.pin {
+  position: absolute;
+  left: calc(var(--x) * 100%); top: calc(var(--y) * 100%);
+  width: 0; height: 0;
+  transform: scale(calc(1 / var(--z, 1)));
+}
+/* el punto blanco con su halo */
+.pin::before {
+  content: ''; position: absolute; left: -6px; top: -6px; width: 12px; height: 12px;
+  border-radius: 50%; background: var(--blanco);
+  box-shadow: 0 0 0 5px rgba(255, 255, 255, .25), 0 1px 8px rgba(14, 42, 46, .6);
+}
+.pin__n {
+  position: absolute; left: 12px; top: -9px;
+  font-size: 11px; font-weight: 600; letter-spacing: .1em; line-height: 18px;
+  text-shadow: 0 1px 6px rgba(14, 42, 46, .9);
+}
+/* la etiqueta: encima del punto, centrada, mayúsculas abiertas y subrayado de trazos */
+.pin__nombre {
+  position: absolute; bottom: 16px; left: 0; transform: translateX(-50%);
+  padding-bottom: 5px; white-space: nowrap;
+  font-size: 12px; font-weight: 500; letter-spacing: 0.24em; text-transform: uppercase;
+  border-bottom: 1px dashed rgba(255, 255, 255, .85);
+  text-shadow: 0 1px 10px rgba(14, 42, 46, .95), 0 0 2px rgba(14, 42, 46, .8);
+  opacity: 0;
+}
+@media (max-width: 520px) { .pin__nombre { font-size: 10.5px; letter-spacing: 0.18em; } }
+
+/* Quieto (movimiento reducido): la foto con los puntos numerados; el nombre está en la lista */
+.recorrido--quieto .pin__nombre { display: none; }
+
+/* El viaje: la sección mide una pantalla por paso y la escena se queda pegada arriba mientras
+   la cámara se mueve. --pasos lo pone main.js. */
+.recorrido--viaje { height: calc(var(--pasos, 8) * 100vh); height: calc(var(--pasos, 8) * 100svh); }
+.recorrido--viaje .recorrido__escena {
+  position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden;
+}
+/* el lienzo mide lo que la aérea a «cover» de la pantalla (lo calcula main.js en --w y --h) y
+   se mueve SÓLO con transform: nada de top/left por fotograma, que obligaría a recalcular la
+   página entera en cada paso del scroll. */
+.recorrido--viaje .recorrido__lienzo {
+  position: absolute; top: 0; left: 0; width: var(--w); height: var(--h);
+  transform-origin: 0 0; will-change: transform;
+}
+.recorrido--viaje .recorrido__img { width: 100%; height: 100%; }
+/* un velo abajo y a la izquierda para que la ficha se lea sobre cualquier parte del render */
+.recorrido--viaje .recorrido__escena::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(0deg, rgba(14, 42, 46, .85) 0%, rgba(14, 42, 46, 0) 45%),
+              linear-gradient(90deg, rgba(14, 42, 46, .5) 0%, rgba(14, 42, 46, 0) 50%);
+}
+.recorrido--viaje .pin::before { opacity: .55; transition: opacity .4s var(--ease); }
+.recorrido--viaje .pin__n { opacity: 0; }
+.recorrido--viaje .pin__nombre { transition: opacity .4s var(--ease), transform .4s var(--ease); transform: translate(-50%, 6px); }
+.recorrido--viaje .pin.activo::before { opacity: 1; }
+.recorrido--viaje .pin.activo .pin__nombre { opacity: 1; transform: translate(-50%, 0); }
+
+/* la ficha del paso: abajo a la izquierda; todas apiladas en la misma celda, así la caja mide lo
+   que la más larga y no salta al cambiar */
+.recorrido--viaje .recorrido__texto {
+  position: absolute; z-index: 2; left: 0; bottom: 0;
+  width: min(480px, 100%); margin: 0; padding: 0 22px max(34px, env(safe-area-inset-bottom)) max(22px, env(safe-area-inset-left));
+}
+@media (min-width: 900px) { .recorrido--viaje .recorrido__texto { padding: 0 0 56px 56px; } }
+.recorrido--viaje .recorrido__pasos { display: grid; grid-template-columns: 1fr; margin-top: 8px; }
+.recorrido--viaje .paso {
+  grid-area: 1 / 1; align-self: end;
+  opacity: 0; transform: translateY(10px);
+  transition: opacity .45s var(--ease), transform .45s var(--ease);
+}
+.recorrido--viaje .paso.activo { opacity: 1; transform: none; }
+.recorrido--viaje .paso h3 { font-size: clamp(15px, 1.6vw, 19px); }
+.recorrido--viaje .paso p { font-size: 14px; color: rgba(255, 255, 255, .88); }
+@media (max-width: 520px) { .recorrido--viaje .paso p { font-size: 13px; } }
+
+/* El salto del recorrido: para quien va con el teclado, no tener que pasar ocho pantallas */
+.salto--recorrido { position: absolute; top: 12px; z-index: 5; }
+.salto--recorrido:focus { transform: translate(-50%, 0); }
+.recorrido:not(.recorrido--viaje) .salto--recorrido { display: none; }
 
 /* ---------- Secciones ---------- */
-.seccion { max-width: 1120px; margin: 0 auto; padding: clamp(56px, 9vw, 110px) 20px; }
-.seccion h2 { margin: 0 0 22px; font-size: clamp(24px, 3.4vw, 38px); color: var(--brand); }
-.pie { margin: 10px 0 0; color: var(--muted); font-size: 13px; }
-.ancha { width: 100%; height: auto; border-radius: var(--radio); box-shadow: var(--sombra); }
+.seccion { max-width: 1180px; margin: 0 auto; padding: clamp(70px, 10vw, 130px) 20px; }
+.seccion h2 {
+  margin: 0 0 36px;
+  font-size: clamp(24px, 3.6vw, 44px); font-weight: 300; line-height: 1.15;
+  letter-spacing: 0.14em; text-transform: uppercase;
+}
+.pie { margin: 14px 0 0; color: var(--suave); font-size: 13px; }
+.ancha { display: block; width: 100%; height: auto; }
 
 /* Las secciones aparecen al entrar en pantalla. Si el JS no corre, se ven igual: la clase
    que las oculta la pone el propio JS. Una animación que falla no deja la página en blanco. */
-.js .aparece { opacity: 0; transform: translateY(18px); transition: opacity .6s var(--ease), transform .6s var(--ease); }
+.js .aparece { opacity: 0; transform: translateY(18px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
 .js .aparece.dentro { opacity: 1; transform: none; }
 @media (prefers-reduced-motion: reduce) {
   .js .aparece { opacity: 1; transform: none; transition: none; }
 }
 
+/* Las secciones a todo el ancho con otro fondo: el contenido sigue en su columna */
+#cifras, #galeria, .cierre { max-width: none; background: var(--tinta); }
+#galeria > *, .cierre > * { max-width: 1140px; margin-left: auto; margin-right: auto; }
+
 /* ---------- Cifras ---------- */
 /* Rejilla y no flex: con flex, en un móvil quedaban tres cifras arriba y una sola, huérfana,
-   debajo. Dos por fila en el teléfono y las cuatro en una fila desde la tableta. El relleno de
-   abajo es menor que el de las demás secciones: sumado al de arriba de «etapas» dejaba un
-   hueco en blanco de casi una pantalla entre las cifras y el primer título. */
+   debajo. Dos por fila en el teléfono y las cuatro en una fila desde la tableta. */
 .cifras {
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 28px 16px; text-align: center; padding-bottom: clamp(24px, 4vw, 48px);
+  gap: 40px 16px; text-align: center;
+  padding-top: clamp(60px, 8vw, 100px); padding-bottom: clamp(60px, 8vw, 100px);
 }
-@media (min-width: 700px) { .cifras { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-.dato strong { display: block; font-size: clamp(30px, 5vw, 50px); font-weight: 700; color: var(--brand); line-height: 1.05; }
-.dato span { display: block; margin-top: 4px; color: var(--muted); font-size: 13px; line-height: 1.4; }
-
-/* Para lo que tiene que estar para el lector de pantalla pero no a la vista */
-.oculto {
-  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
-  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+@media (min-width: 700px) {
+  .cifras { grid-template-columns: repeat(4, minmax(0, 220px)); justify-content: center; }
+}
+.dato strong { display: block; font-size: clamp(38px, 5.4vw, 64px); font-weight: 300; line-height: 1; letter-spacing: .04em; }
+.dato span {
+  display: block; margin-top: 12px; color: var(--arena);
+  font-size: 11px; line-height: 1.5; letter-spacing: .2em; text-transform: uppercase;
 }
 
 /* ---------- Tarjetas ---------- */
 /* El min(...,100%) no es adorno: con minmax(270px,...) a secas, en una pantalla de 320 px
    —que las hay— la columna no cabe y la página se desborda de lado. */
-.rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(270px, 100%), 1fr)); gap: 26px; }
-.tarjeta__foto { aspect-ratio: 16/10; border-radius: var(--radio); overflow: hidden; background: var(--brand-soft); }
-.tarjeta__foto img { width: 100%; height: 100%; object-fit: cover; }
-.tarjeta h3 { margin: 14px 0 6px; font-size: 18px; color: var(--brand); }
-.tarjeta p { margin: 0; color: var(--muted); font-size: 14px; }
-.tarjeta ul { margin: 10px 0 0; padding-left: 18px; color: var(--muted); font-size: 13px; }
-.tarjeta ul:empty { display: none; }
-
-/* ---------- Cierre y pie ---------- */
-.cierre { max-width: none; background: var(--brand-soft); text-align: center; }
-.cierre > p { margin: 0 auto; max-width: 50ch; color: var(--muted); }
-.nota { margin: 26px auto 0; max-width: 70ch; color: var(--muted); font-size: 11.5px; }
-.pie-web { padding: 28px 20px calc(96px + env(safe-area-inset-bottom)); text-align: center; color: var(--muted); font-size: 13px; }
-.pie-web a { color: var(--brand); }
-
-/* La reserva, siempre a mano */
-.fija {
-  position: fixed; left: 0; right: 0; margin: 0 auto; bottom: calc(16px + env(safe-area-inset-bottom));
-  z-index: 10;
+.rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 44px 30px; }
+.tarjeta__foto { aspect-ratio: 4 / 3; overflow: hidden; background: var(--tinta); }
+.tarjeta__foto img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--ease); }
+.tarjeta:hover .tarjeta__foto img { transform: scale(1.04); }
+.tarjeta h3 {
+  margin: 20px 0 10px; padding-bottom: 10px;
+  font-size: 14px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase;
+  border-bottom: 1px dashed var(--linea);
 }
-.fija:hover { transform: translateY(-1px); }
-/* Mientras se ve la portada no hace falta: ahí ya hay un botón igual. La clase la pone el JS,
-   así que sin JS el botón se ve siempre, que es el lado seguro. */
-/* También se esconde al llegar al formulario: ahí ya está el botón de enviar, y en el móvil
-   el fijo tapaba justo los campos que se están llenando. visibility además de opacity, para
-   que el teclado no se pare en un botón que no se ve. */
-.fija--oculta { opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(12px); }
-.fija { transition: opacity .35s var(--ease), transform .35s var(--ease), visibility .35s; }
-@media (prefers-reduced-motion: reduce) { .fija { transition: none; } }
+.tarjeta p { margin: 0; color: var(--suave); font-size: 14px; }
+.tarjeta ul { margin: 12px 0 0; padding-left: 16px; color: var(--suave); font-size: 13px; }
+.tarjeta ul:empty { display: none; }
+@media (prefers-reduced-motion: reduce) { .tarjeta__foto img, .tarjeta:hover .tarjeta__foto img { transition: none; transform: none; } }
 
 /* ---------- Galería de clips ---------- */
-.clips { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr)); gap: 18px; }
-.clip__abrir {
-  position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden;
-  border-radius: var(--radio); background: var(--brand-soft); box-shadow: var(--sombra);
-}
-.clip__abrir img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .6s var(--ease); }
+.clips { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 14px; }
+.clip__abrir { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; background: var(--marca); }
+.clip__abrir img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .9s var(--ease); }
 .clip__abrir:hover img, .clip__abrir:focus-visible img { transform: scale(1.04); }
 .clip__play {
-  position: absolute; inset: 0; margin: auto; width: 58px; height: 58px;
-  border-radius: 50%; background: rgba(255, 255, 255, .93); box-shadow: var(--sombra);
+  position: absolute; inset: 0; margin: auto; width: 56px; height: 56px;
+  border: 1px solid var(--blanco); border-radius: 50%; background: rgba(14, 42, 46, .35);
 }
 .clip__play::after {
   /* el triángulo, un poco a la derecha para que se vea centrado */
   content: ''; position: absolute; top: 50%; left: 54%; transform: translate(-50%, -50%);
-  border-left: 15px solid var(--brand);
-  border-top: 9px solid transparent; border-bottom: 9px solid transparent;
+  border-left: 13px solid var(--blanco);
+  border-top: 8px solid transparent; border-bottom: 8px solid transparent;
 }
 .clip__nombre {
-  position: absolute; left: 0; right: 0; bottom: 0; padding: 30px 14px 11px;
-  color: var(--white); font-size: 13px; font-weight: 600; line-height: 1.3;
-  background: linear-gradient(transparent, rgba(4, 38, 43, .8));
+  position: absolute; left: 0; right: 0; bottom: 0; padding: 40px 16px 13px;
+  font-size: 11px; font-weight: 500; letter-spacing: .18em; line-height: 1.4; text-transform: uppercase;
+  background: linear-gradient(transparent, rgba(14, 42, 46, .9));
 }
 /* el vídeo ocupa el mismo hueco que ocupaba la foto: nada salta al abrirlo */
-.clip video { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: var(--radio); background: #000; box-shadow: var(--sombra); }
-.clip__fallo { margin: 8px 0 0; color: var(--muted); font-size: 12.5px; }
+.clip video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; }
+.clip__fallo { margin: 8px 0 0; color: var(--suave); font-size: 12.5px; }
+#galeria .pie + p { margin-top: 30px; }
 @media (prefers-reduced-motion: reduce) {
   .clip__abrir img, .clip__abrir:hover img { transition: none; transform: none; }
 }
 
-/* ---------- Formulario de consulta ---------- */
-/* Sólo con JS: es JS quien arma el mensaje. Sin él quedan los dos enlaces de debajo. */
+/* ---------- Contacto ---------- */
+.cierre { text-align: center; }
+.cierre h2 { margin-bottom: 18px; }
+.cierre__intro { max-width: 46ch; margin-top: 0; color: var(--suave); }
+
+/* El formulario, minimal como el de la referencia: sólo la línea de abajo en cada campo. Sólo
+   con JS, porque es JS quien arma el mensaje; sin él queda el bloque «Contáctanos». */
 .consulta { display: none; }
-.js .consulta { display: block; max-width: 720px; margin: 30px auto 0; text-align: left; }
-.consulta__fila { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-@media (max-width: 620px) { .consulta__fila { grid-template-columns: 1fr; } }
-.campo { display: block; margin-bottom: 14px; }
-.campo > span { display: block; margin-bottom: 5px; font-size: 13px; font-weight: 600; color: var(--brand); }
-.campo > span em { font-style: normal; font-weight: 400; color: var(--muted); }
+.js .consulta { display: block; max-width: 560px; margin-top: 44px; text-align: left; }
+.campo { display: block; margin-bottom: 22px; }
+.campo > span {
+  display: block; margin-bottom: 2px;
+  font-size: 11px; font-weight: 500; letter-spacing: .22em; text-transform: uppercase; color: var(--suave);
+}
+.campo > span em { font-style: normal; letter-spacing: .05em; text-transform: none; }
 .campo input, .campo select, .campo textarea {
-  width: 100%; min-height: 46px; padding: 11px 13px;
-  /* el borde es lo único que dice «aquí se escribe»: necesita 3:1 contra el blanco (WCAG
-     1.4.11). El gris verdoso de antes daba 1,4:1 y en el sol de un móvil el campo no se veía. */
-  border: 1px solid #7d9598; border-radius: 10px;
-  background: var(--white); color: var(--ink);
-  font-family: inherit; font-size: 15px;
-  transition: border-color .2s, box-shadow .2s;
+  width: 100%; min-height: 44px; padding: 8px 0;
+  /* la línea es lo único que dice «aquí se escribe»: blanca al 70 % sobre la tinta da 8:1,
+     muy por encima del 3:1 que pide un borde de campo (WCAG 1.4.11) */
+  border: 0; border-bottom: 1px solid rgba(255, 255, 255, .7); border-radius: 0;
+  background: transparent; color: var(--blanco);
+  font-family: inherit; font-size: 16px; font-weight: 400;
+  transition: border-color .2s;
 }
-.campo textarea { min-height: 88px; resize: vertical; line-height: 1.5; }
+/* el desplegable abre con los colores del sistema: sin esto, en Windows salían letras blancas
+   sobre fondo blanco */
+.campo select option { color: var(--tinta); background: var(--blanco); }
+.campo textarea { min-height: 64px; resize: vertical; line-height: 1.5; }
+.campo ::placeholder { color: rgba(255, 255, 255, .55); }
 .campo input:focus, .campo select:focus, .campo textarea:focus {
-  outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(4, 64, 72, .3);
+  outline: none; border-bottom: 2px solid var(--arena); padding-bottom: 7px;
 }
-.campo small { display: none; margin-top: 5px; font-size: 12.5px; color: #b4442e; }
+.campo small { display: none; margin-top: 6px; font-size: 12.5px; color: var(--error); }
 /* el error se enseña sólo cuando hay algo que decir */
-.campo.mal input, .campo.mal select { border-color: #d4705c; }
+.campo.mal input, .campo.mal select { border-bottom-color: var(--error); }
 .campo.mal small { display: block; }
-.consulta__enviar { margin-top: 2px; }
-.consulta__nota { margin: 12px 0 0; color: var(--muted); font-size: 12px; }
-.consulta__gracias { margin: 14px 0 0; color: var(--brand); font-size: 14px; font-weight: 600; }
-.consulta__o { margin: 34px 0 -16px; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .18em; }
-html:not(.js) .consulta__o { display: none; }
+.consulta__enviar { margin-top: 10px; }
+.consulta__nota { margin: 16px 0 0; color: var(--suave); font-size: 12px; }
+.consulta__gracias { margin: 16px 0 0; color: var(--arena); font-size: 14px; font-weight: 500; }
 /* la trampa de los robots: fuera de la vista, pero no con display:none, que algunos detectan */
 .trampa { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 
-/* ---------- La barra de secciones ---------- */
-.menu {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 20;
-  display: flex; align-items: center; gap: 16px;
-  padding: 9px max(14px, env(safe-area-inset-left)) 9px max(14px, env(safe-area-inset-right));
-  background-color: transparent;
-  /* un velo arriba para que las letras blancas se lean sobre la aérea */
-  background-image: linear-gradient(rgba(4, 38, 43, .5), rgba(4, 38, 43, 0));
-  transition: background-color .3s var(--ease), box-shadow .3s var(--ease);
+.contacto { margin-top: 70px; padding-top: 44px; border-top: 1px solid var(--linea); }
+.contacto .antetitulo { margin-bottom: 18px; }
+.contacto p { margin: 6px 0; }
+.contacto a {
+  font-size: clamp(16px, 2vw, 20px); font-weight: 300; letter-spacing: .06em; text-decoration: none;
+  border-bottom: 1px dashed var(--linea); padding-bottom: 2px;
+  overflow-wrap: anywhere;
 }
-/* al dejar la portada: verde marca, que es lo único sobre lo que el logo blanco se ve */
-.menu--solido { background-image: none; background-color: var(--brand); box-shadow: 0 2px 18px rgba(4, 38, 43, .22); }
-.menu__marca { flex: none; display: block; }
-.menu__marca img { display: block; width: auto; height: 30px; }
-.menu__lista {
-  display: flex; gap: 2px; margin: 0; padding: 0; list-style: none;
-  overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
-}
-.menu__lista::-webkit-scrollbar { display: none; }
-.menu__lista a {
-  display: block; padding: 8px 11px; border-radius: 999px;
-  color: var(--white); text-decoration: none; white-space: nowrap;
-  /* 600 y no 500 a propósito: es el peso que ya va precargado, así la barra —que es lo
-     primero que se ve— no cambia de letra a media carga, y nos ahorra bajar una variante. */
-  font-size: 13.5px; font-weight: 600; opacity: .88;
-  transition: background-color .2s, opacity .2s;
-}
-.menu__lista a:hover, .menu__lista a:focus-visible { opacity: 1; background: rgba(255, 255, 255, .14); }
-.menu__lista a[aria-current] { opacity: 1; font-weight: 600; background: rgba(255, 255, 255, .2); }
-@media (max-width: 620px) {
-  .menu { gap: 10px; }
-  .menu__marca img { height: 25px; }
-  .menu__lista a { padding: 7px 9px; font-size: 13px; }
-  /* En un móvil caben seis enlaces a medias (unos 300 px de 470). El borde derecho se desvanece
-     para que se vea que la lista sigue: sin esa pista, «Contacto» no existe para quien no se le
-     ocurra arrastrar. Aun así nadie se queda sin él, porque el botón fijo de abajo lleva allí. */
-  .menu__lista {
-    -webkit-mask-image: linear-gradient(to right, #000 86%, transparent);
-    mask-image: linear-gradient(to right, #000 86%, transparent);
-  }
-}
-/* que el título de la sección no quede debajo de la barra al llegar por un enlace */
-.seccion, .portada { scroll-margin-top: 58px; }
+.contacto a:hover { border-bottom-color: var(--blanco); }
+
+/* ---------- Pie ---------- */
+.pie-web { padding: 40px 20px calc(40px + env(safe-area-inset-bottom)); text-align: center; background: var(--tinta); color: var(--suave); font-size: 12.5px; }
+.pie-web__logo { width: 110px; height: auto; margin: 10px auto 14px; display: block; opacity: .9; }
+.pie-web p { margin: 4px auto; }
+.pie-web .nota { max-width: 70ch; margin-top: 14px; font-size: 11.5px; }
+
+/* que el título de la sección no quede debajo de la píldora al llegar por un enlace */
+.seccion, .portada, .lema, .recorrido { scroll-margin-top: 0; }
+.seccion { scroll-margin-top: 20px; }
 
 /* ---------- Teclado y foco ---------- */
-/* El salto al contenido: sólo existe cuando se navega con el teclado. Sin él, para llegar al
-   primer párrafo hay que pasar por los seis enlaces de la barra en cada carga. */
+/* El salto al contenido: sólo existe cuando se navega con el teclado. */
 .salto {
   position: fixed; top: 8px; left: 50%; z-index: 40;
   transform: translate(-50%, -160%);
   padding: 11px 20px; border-radius: 999px;
-  background: var(--white); color: var(--brand);
-  font-size: 14px; font-weight: 600; text-decoration: none;
-  box-shadow: var(--sombra);
+  background: var(--blanco); color: var(--marca);
+  font-size: 13px; font-weight: 600; text-decoration: none;
   transition: transform .2s var(--ease);
 }
 .salto:focus { transform: translate(-50%, 0); }
 
-/* Un foco que se ve sobre cualquier fondo: aro oscuro con halo blanco por fuera. El navegador
-   pone uno por omisión, pero sobre el verde de la barra y sobre la aérea casi no se distingue. */
+/* Un foco que se ve sobre cualquier fondo: aro arena con halo oscuro por fuera. Toda la página
+   es oscura, así que el aro claro es el que se ve; el halo lo separa de las fotos claras. */
 a:focus-visible, button:focus-visible, input:focus-visible,
 select:focus-visible, textarea:focus-visible, video:focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, .9);
+  outline: 2px solid var(--arena);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px rgba(14, 42, 46, .7);
 }
-.menu a:focus-visible, .portada a:focus-visible {
-  outline-color: var(--white);
-  box-shadow: 0 0 0 4px rgba(4, 38, 43, .55);
-}
-
-/* el h1 no aporta espaciado: el título visible es el logo */
-.portada__titulo { margin: 0; font-size: 0; line-height: 0; }

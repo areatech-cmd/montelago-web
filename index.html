@@ -36,10 +36,10 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Place","name":"Montelago Condominio Club","description":"Montelago es un condominio ecoamigable diseñado para brindar una experiencia de vida en contacto con la naturaleza, integrando espacios residenciales, recreativos y de bienestar en un entorno sostenible.","url":"https://areatech-cmd.github.io/montelago-web/","image":"https://areatech-cmd.github.io/montelago-web/assets/img/tarjeta-og.jpg","address":{"@type":"PostalAddress","streetAddress":"57FQ+J7, Sector La Calerita · distrito de Tumán, provincia de Chiclayo, Lambayeque","addressLocality":"Tumán","addressRegion":"Lambayeque","addressCountry":"PE"},"telephone":"+51 913 401 447","isicV4":"6810","geo":{"@type":"GeoCoordinates","latitude":-6.825972,"longitude":-79.711792},"additionalProperty":{"@type":"PropertyValue","name":"Promotora","value":"Villacasa Group S.A.C."}}</script>
 
 <!-- Montserrat desde el propio sitio: la fuente de la marca, y la IP del visitante no viaja
-     a Google por leer una página. Es una fuente variable: UN archivo trae los tres pesos, así
-     que se precarga uno solo. Antes iban dos precargas de dos copias idénticas, y el navegador
-     bajaba el mismo archivo dos y tres veces. El crossorigin NO es opcional en una fuente,
-     aunque sea del mismo sitio. -->
+     a Google por leer una página. Es una fuente variable: UN archivo trae todos los pesos, así
+     que se precarga uno solo. El crossorigin NO es opcional en una fuente, aunque sea del mismo
+     sitio. La manuscrita (Allura) NO se precarga: sale en la segunda sección, y precargarla
+     sería pelearle el ancho de banda a la portada por algo que todavía no se ve. -->
 <link rel="preload" as="font" type="font/woff2" href="assets/fuentes/montserrat-400-latin.woff2" crossorigin>
 <link rel="stylesheet" href="assets/fuentes/montserrat.css">
 
@@ -48,33 +48,25 @@
 </head>
 <body>
 
-<!-- Para quien navega con el teclado: lo primero que se enfoca es un enlace que salta los seis
-     enlaces de la barra y va al contenido. Sólo se ve cuando tiene el foco. -->
+<!-- Para quien navega con el teclado: lo primero que se enfoca es un enlace que salta la
+     cabecera y va al contenido. Sólo se ve cuando tiene el foco. -->
 <a class="salto" href="#contenido">Ir al contenido</a>
 
-<!-- La barra va encima de la portada, transparente, y se vuelve verde al dejarla atrás. El logo
-     es blanco —es el único que entregó Arquitectura—, así que la barra sólida NO puede ser
-     blanca: sería un logo invisible. Verde marca y letras blancas, siempre las mismas.
+<!-- La píldora de arriba a la izquierda, como en la referencia: el menú y el botón que vende,
+     siempre a mano. Por eso ya no hay botón flotante abajo: éste no se va nunca de la vista.
+     El botón del menú sólo existe con JS (es JS quien abre el panel); sin JS el menú es una
+     lista normal al final de la página y la píldora se queda con su enlace de contacto. -->
+<header class="cabecera">
+  <div class="pildora">
+    <button class="pildora__menu" type="button" aria-expanded="false" aria-controls="menu" hidden>
+      <span class="hamburguesa" aria-hidden="true"><span></span></span>
+      <span class="oculto">Menú</span>
+    </button>
+    <a class="pildora__cta" href="#contacto">Quiero información</a>
+  </div>
+</header>
 
-     En pantalla estrecha los enlaces se desplazan de lado en vez de esconderse detrás de un
-     botón de hamburguesa. Un menú que hay que abrir es una cosa más que puede fallar, y aquí
-     todas las secciones caben de un toque. -->
-<nav class="menu" aria-label="Secciones">
-  <a class="menu__marca" href="#portada" aria-label="Montelago, ir arriba">
-    <!-- alt vacío: el enlace que lo envuelve ya lleva su propia etiqueta -->
-    <img src="assets/img/logo-white.webp" alt="" width="1187" height="830">
-  </a>
-  <ul class="menu__lista">
-    <li><a href="#etapas">El proyecto</a></li>
-    <li><a href="#plano">Plano</a></li>
-    <li><a href="#areas">Áreas comunes</a></li>
-    <li><a href="#galeria">Galería</a></li>
-    <li><a href="#llegar">Cómo llegar</a></li>
-    <li><a href="#contacto">Contacto</a></li>
-  </ul>
-</nav>
-
-<header class="portada" id="portada">
+<div class="portada" id="portada">
   <!-- La foto se ve siempre y de inmediato; el vídeo entra encima cuando ha bajado lo
        suficiente. Si el visitante pidió ahorro de datos, o va por una conexión lenta, o tiene
        el movimiento reducido, el vídeo no se baja: se queda la foto. Eso lo decide main.js. -->
@@ -83,21 +75,98 @@
          data-720="assets/video/portada-720.mp4" data-1080="assets/video/portada-1080.mp4"
          aria-hidden="true"></video>
   <div class="portada__velo"></div>
-  <div class="portada__centro">
-    <!-- El logo ES el título de la página: su texto alternativo hace de h1. Antes la página no
-         tenía ningún h1 y para un buscador —o para quien la lee con un lector de pantalla— eso
-         es una página sin nombre. -->
-    <h1 class="portada__titulo"><img class="portada__logo" src="assets/img/logo-white.webp" alt="Montelago · Condominio Club" width="1187" height="830"></h1>
-    <p class="tagline">Condominio Club</p>
-    <p class="lead">Montelago es un condominio ecoamigable diseñado para brindar una experiencia de vida en contacto con la naturaleza, integrando espacios residenciales, recreativos y de bienestar en un entorno sostenible.</p>
-    <div class="acciones">
-      <a class="btn btn--primario" href="https://montelago-tour.condominiosvillacasa.com" target="_blank" rel="noopener">Recorrer el proyecto</a>
-      <a class="btn" href="#contacto">Quiero información</a>
-    </div>
-  </div>
-</header>
+  <!-- El logo ES el título de la página: su texto alternativo hace de h1. Arriba y al centro,
+       pequeño, como la marca de la referencia; lo grande es el titular de abajo. -->
+  <h1 class="portada__marca"><img class="portada__logo" src="assets/img/logo-white.webp" alt="Montelago · Condominio Club" width="1187" height="830"></h1>
+  <p class="portada__titular">
+    <span class="portada__antetitulo">Lotes residenciales · Condominio club</span>
+    <span class="portada__grande">Alrededor de la laguna</span>
+  </p>
+  <a class="portada__bajar" href="#lema" aria-label="Bajar a la siguiente sección"><span aria-hidden="true"></span></a>
+</div>
 
 <main id="contenido">
+
+<!-- El lema: la toma cenital oficial de la Etapa I de fondo, con velo, y encima la frase a
+     mano, la descripción oficial y el botón. El vídeo no se baja hasta que la sección está
+     cerca; mientras tanto, y para quien no quiere vídeo, queda su foto. -->
+<section class="lema" id="lema" aria-labelledby="lema-titulo">
+  <img class="lema__fondo" src="assets/img/cenital-poster.webp" alt="" width="1920" height="1080" loading="lazy" decoding="async">
+  <video class="lema__video fondo-vivo" muted loop playsinline preload="none" data-src="assets/video/cenital-720.mp4" aria-hidden="true"></video>
+  <div class="lema__velo"></div>
+  <div class="lema__texto">
+    <h2 class="manuscrita" id="lema-titulo">una vida en contacto<br>con la naturaleza</h2>
+    <p>Montelago es un condominio ecoamigable diseñado para brindar una experiencia de vida en contacto con la naturaleza, integrando espacios residenciales, recreativos y de bienestar en un entorno sostenible.</p>
+    <a class="boton" href="#contacto"><span aria-hidden="true">+</span> Quiero información</a>
+  </div>
+</section>
+
+<!-- El recorrido: la aérea oficial y, al hacer scroll, la cámara va de punto en punto del
+     masterplan. Lo mueve main.js. Sin JS esto es la foto con la lista de puntos debajo; con
+     movimiento reducido, la foto con los puntos numerados y la misma lista. Las posiciones
+     (data-x, data-y) son fracciones de la imagen, sacadas de los puntos del tour. -->
+<section class="recorrido" id="recorrido" aria-labelledby="recorrido-titulo">
+  <a class="salto salto--recorrido" href="#cifras">Saltar el recorrido</a>
+  <div class="recorrido__escena">
+    <div class="recorrido__lienzo">
+      <img class="recorrido__img" src="assets/img/poster.webp" alt="Vista aérea de Montelago con sus tres etapas" width="1920" height="1080" loading="lazy" decoding="async">
+      <div class="recorrido__pines" aria-hidden="true">
+      <span class="pin" data-paso="1" data-x="0.2599" data-y="0.6870"><span class="pin__n">01</span><span class="pin__nombre">Ingreso a Montelago</span></span>
+      <span class="pin" data-paso="2" data-x="0.3656" data-y="0.6685"><span class="pin__n">02</span><span class="pin__nombre">Etapa I</span></span>
+      <span class="pin" data-paso="3" data-x="0.5443" data-y="0.6787"><span class="pin__n">03</span><span class="pin__nombre">Laguna artificial 1</span></span>
+      <span class="pin" data-paso="4" data-x="0.5380" data-y="0.5731"><span class="pin__n">04</span><span class="pin__nombre">Etapa III</span></span>
+      <span class="pin" data-paso="5" data-x="0.6896" data-y="0.5759"><span class="pin__n">05</span><span class="pin__nombre">Zona deportiva y Club House</span></span>
+      <span class="pin" data-paso="6" data-x="0.7229" data-y="0.4528"><span class="pin__n">06</span><span class="pin__nombre">Etapa II</span></span>
+      <span class="pin" data-paso="7" data-x="0.8318" data-y="0.4759"><span class="pin__n">07</span><span class="pin__nombre">Laguna artificial 2</span></span>
+      </div>
+    </div>
+    <div class="recorrido__texto">
+      <h2 class="antetitulo" id="recorrido-titulo">Recorre Montelago</h2>
+      <ol class="recorrido__pasos">
+        <li class="paso" data-paso="0">
+          <span class="paso__n" aria-hidden="true">00 / 07</span>
+          <h3>Vista general</h3>
+          <p>Tres etapas y dos lagunas artificiales. Desliza para recorrerlo de la entrada a la segunda laguna.</p>
+        </li>
+        <li class="paso" data-paso="1">
+          <span class="paso__n" aria-hidden="true">01 / 07</span>
+          <h3>Ingreso a Montelago</h3>
+          <p>Acceso al condominio, junto al Condominio Montehermoso.</p>
+        </li>
+        <li class="paso" data-paso="2">
+          <span class="paso__n" aria-hidden="true">02 / 07</span>
+          <h3>Etapa I</h3>
+          <p>Primera etapa: 116 lotes residenciales articulados alrededor de una laguna artificial como elemento paisajístico central, con espacios de contemplación, recreación y conexión con la naturaleza.</p>
+        </li>
+        <li class="paso" data-paso="3">
+          <span class="paso__n" aria-hidden="true">03 / 07</span>
+          <h3>Laguna artificial 1</h3>
+          <p>Picnic, juegos infantiles, parque canino, gimnasio al aire libre, yoga y fogata. Muelle con botes pedalones y mirador para los atardeceres.</p>
+        </li>
+        <li class="paso" data-paso="4">
+          <span class="paso__n" aria-hidden="true">04 / 07</span>
+          <h3>Etapa III</h3>
+          <p>Tercera etapa del proyecto conformada por 115 lotes residenciales, complementada con una zona deportiva y Club House como espacios de encuentro, integración y recreación, fortaleciendo la experiencia residencial mediante ambientes sociales y de bienestar.</p>
+        </li>
+        <li class="paso" data-paso="5">
+          <span class="paso__n" aria-hidden="true">05 / 07</span>
+          <h3>Zona deportiva y Club House</h3>
+          <p>Canchas de fútbol y Club House con zona de parrillas, salón de eventos, piscina y espacios de descanso (Etapa III).</p>
+        </li>
+        <li class="paso" data-paso="6">
+          <span class="paso__n" aria-hidden="true">06 / 07</span>
+          <h3>Etapa II</h3>
+          <p>Segunda etapa del proyecto conformada por 111 lotes residenciales, integrada alrededor de una segunda laguna artificial que amplía la propuesta paisajística del condominio, incorporando nuevos espacios de descanso, recreación y disfrute del entorno natural.</p>
+        </li>
+        <li class="paso" data-paso="7">
+          <span class="paso__n" aria-hidden="true">07 / 07</span>
+          <h3>Laguna artificial 2</h3>
+          <p>Segundo espacio paisajístico, con mirador, zonas de descanso, áreas de fogata y espacios de picnic (Etapa II).</p>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>
 
 <section class="seccion cifras" id="cifras" aria-labelledby="cifras-titulo">
   <!-- el título no se ve —las cifras se explican solas—, pero sin él la sección es un bloque
@@ -110,7 +179,8 @@
 </section>
 
 <section class="seccion" id="etapas">
-  <h2>El proyecto, en tres etapas</h2>
+  <p class="antetitulo" aria-hidden="true">El proyecto</p>
+  <h2>Tres etapas</h2>
   <div class="rejilla">
       <article class="tarjeta">
         <div class="tarjeta__foto"><img src="assets/img/cenital-poster.webp" alt="Etapa I" width="1920" height="1080" loading="lazy" decoding="async"></div>
@@ -128,24 +198,44 @@
 </section>
 
 <section class="seccion" id="plano">
+  <p class="antetitulo" aria-hidden="true">Plano general</p>
   <h2>Dónde está cada cosa</h2>
   <img class="ancha" src="assets/img/masterplan-general.webp" alt="Plano general del proyecto · etapas y zonas recreativas" width="1920" height="1080" loading="lazy" decoding="async">
   <p class="pie">Plano general del proyecto · etapas y zonas recreativas</p>
 </section>
 
+<!-- Dos áreas comunes a pantalla completa, con su clip oficial de fondo como la toma del lema:
+     el vídeo se pide al acercarse, se pausa al salir y con movimiento reducido queda la foto.
+     Van con la rejilla de las demás dentro de un mismo bloque para que el menú apunte a «las
+     áreas comunes» y no a una en concreto, que podría dejar de existir. -->
+<div id="comunes">
+<section class="ambiente" id="area-laguna-1" aria-labelledby="area-laguna-1-titulo">
+  <img class="ambiente__fondo" src="assets/img/mirador-poster.webp" alt="Mirador de la laguna" width="1920" height="1080" loading="lazy" decoding="async">
+  <video class="ambiente__video fondo-vivo" muted loop playsinline preload="none" data-src="assets/video/mirador-720.mp4" aria-hidden="true"></video>
+  <div class="ambiente__velo"></div>
+  <div class="ambiente__texto">
+    <p class="antetitulo" aria-hidden="true">Mirador de la laguna</p>
+    <h2 id="area-laguna-1-titulo">Laguna artificial 1</h2>
+    <p>Recreación y descanso alrededor de la laguna de la Etapa I.</p>
+    <ul><li>Zonas de picnic</li><li>Juegos infantiles</li><li>Parque canino</li><li>Gimnasio al aire libre</li><li>Zona de yoga</li><li>Espacio de fogata</li><li>Muelle con botes pedalones</li><li>Mirador paisajístico</li><li>Biohuerto</li></ul>
+  </div>
+</section>
+<section class="ambiente" id="area-zona-deportiva-club-house" aria-labelledby="area-zona-deportiva-club-house-titulo">
+  <img class="ambiente__fondo" src="assets/img/piscina-poster.webp" alt="Piscina y Club House" width="1920" height="1080" loading="lazy" decoding="async">
+  <video class="ambiente__video fondo-vivo" muted loop playsinline preload="none" data-src="assets/video/piscina-720.mp4" aria-hidden="true"></video>
+  <div class="ambiente__velo"></div>
+  <div class="ambiente__texto">
+    <p class="antetitulo" aria-hidden="true">Piscina y Club House</p>
+    <h2 id="area-zona-deportiva-club-house-titulo">Zona deportiva y Club House</h2>
+    <p>Deporte, eventos y piscina en la Etapa III.</p>
+    <ul><li>Canchas deportivas de uso común</li><li>Club House</li><li>Piscina de uso común con duchas y cerco de seguridad</li><li>Zonas de parrillas</li><li>Zonas de fogata</li><li>Salón de eventos</li><li>Espacios de descanso</li></ul>
+  </div>
+</section>
+
 <section class="seccion" id="areas">
-  <h2>Áreas comunes</h2>
+  <p class="antetitulo" aria-hidden="true">Para todos</p>
+  <h2>Más áreas comunes</h2>
   <div class="rejilla">
-      <article class="tarjeta">
-        <div class="tarjeta__foto"><img src="assets/img/lago-central.webp" alt="Laguna artificial 1" width="1280" height="720" loading="lazy" decoding="async"></div>
-        <h3>Laguna artificial 1</h3><p>Recreación y descanso alrededor de la laguna de la Etapa I.</p>
-        <ul><li>Zonas de picnic</li><li>Juegos infantiles</li><li>Parque canino</li><li>Gimnasio al aire libre</li><li>Zona de yoga</li></ul>
-      </article>
-      <article class="tarjeta">
-        <div class="tarjeta__foto"><img src="assets/img/casa-club.webp" alt="Zona deportiva y Club House" width="1280" height="720" loading="lazy" decoding="async"></div>
-        <h3>Zona deportiva y Club House</h3><p>Deporte, eventos y piscina en la Etapa III.</p>
-        <ul><li>Canchas deportivas de uso común</li><li>Club House</li><li>Piscina de uso común con duchas y cerco de seguridad</li><li>Zonas de parrillas</li><li>Zonas de fogata</li></ul>
-      </article>
       <article class="tarjeta">
         <div class="tarjeta__foto"><img src="assets/img/lago-norte.webp" alt="Laguna artificial 2" width="1280" height="720" loading="lazy" decoding="async"></div>
         <h3>Laguna artificial 2</h3><p>Mirador, fogatas y picnic en la Etapa II.</p>
@@ -163,8 +253,10 @@
       </article>
   </div>
 </section>
+</div>
 
 <section class="seccion" id="galeria">
+  <p class="antetitulo" aria-hidden="true">Galería</p>
   <h2>El proyecto en movimiento</h2>
   <!-- Cada recuadro es una foto hasta que alguien lo pide: el clip no se baja al entrar. Sin
        JS el enlace abre el vídeo en el navegador, que es lo que un enlace a un .mp4 hace. -->
@@ -218,81 +310,110 @@
           <span class="clip__nombre">Etapa III · la zona del Club House</span>
         </a>
       </article>
+      <article class="clip">
+        <a class="clip__abrir" href="assets/video/piscina-720.mp4" aria-label="Ver el clip: Piscina y Club House">
+          <img src="assets/img/piscina-poster.webp" alt="Piscina y Club House" width="1920" height="1080" loading="lazy" decoding="async">
+          <span class="clip__play" aria-hidden="true"></span>
+          <span class="clip__nombre">Piscina y Club House</span>
+        </a>
+      </article>
+      <article class="clip">
+        <a class="clip__abrir" href="assets/video/mirador-720.mp4" aria-label="Ver el clip: Mirador de la laguna">
+          <img src="assets/img/mirador-poster.webp" alt="Mirador de la laguna" width="1920" height="1080" loading="lazy" decoding="async">
+          <span class="clip__play" aria-hidden="true"></span>
+          <span class="clip__nombre">Mirador de la laguna</span>
+        </a>
+      </article>
   </div>
   <p class="pie">No son grabaciones del lugar: son los renders oficiales de Arquitectura,
      animados. El recorrido completo, con sonido y a pantalla llena, está en el tour.</p>
+  <p><a class="boton boton--borde" href="https://montelago-tour.condominiosvillacasa.com" target="_blank" rel="noopener">Recorrer el proyecto en 3D</a></p>
 </section>
 
 <section class="seccion" id="llegar">
+  <p class="antetitulo" aria-hidden="true">Ubicación</p>
   <h2>Cómo llegar</h2>
   <img class="ancha" src="assets/img/mapa-rutas.webp" alt="Cómo llegar · doble acceso por Reque y Pomalca" width="1600" height="900" loading="lazy" decoding="async">
   <p class="pie">Cómo llegar · doble acceso por Reque y Pomalca</p>
 </section>
 
 <section class="seccion cierre" id="contacto">
-  <h2>¿Te interesa un lote?</h2>
-  <p>Escríbenos y te contamos qué lotes quedan, sus medidas y las formas de pago.</p>
+  <p class="manuscrita manuscrita--chica" aria-hidden="true">conversemos</p>
+  <h2>Quiero información</h2>
+  <p class="cierre__intro">Déjanos tus datos y te contamos qué lotes quedan, sus medidas y las formas de pago.</p>
 
   <!-- El formulario sólo aparece si hay JS, porque es JS quien arma el mensaje: un formulario
-       sin sitio a donde enviar sería un botón que no hace nada. Sin JS quedan los dos enlaces
-       de abajo, que funcionan solos. -->
+       sin sitio a donde enviar sería un botón que no hace nada. Sin JS queda el bloque de
+       «Contáctanos» de abajo, que funciona solo. -->
   <form class="consulta" id="consulta" novalidate data-wa="51913401447" data-correo="ventas@condominiosvillacasa.com">
-    <div class="consulta__fila">
-      <label class="campo">
-        <span>Nombre</span>
-        <input name="nombre" type="text" autocomplete="name" required>
-        <small data-error="nombre"></small>
-      </label>
-      <label class="campo">
-        <span>Teléfono</span>
-        <input name="telefono" type="tel" autocomplete="tel" inputmode="tel" required>
-        <small data-error="telefono"></small>
-      </label>
-    </div>
-    <div class="consulta__fila">
-      <label class="campo">
-        <span>Correo</span>
-        <input name="correo" type="email" autocomplete="email" inputmode="email" required>
-        <small data-error="correo"></small>
-      </label>
-      <label class="campo">
-        <span>¿Qué te interesa?</span>
-        <select name="interes">
-          <option>Un lote en la Etapa I</option>
-          <option>La Etapa II</option>
-          <option>La Etapa III</option>
-          <option>Las áreas comunes</option>
-          <option>Todavía no lo sé</option>
-        </select>
-      </label>
-    </div>
+    <label class="campo">
+      <span>Nombre</span>
+      <input name="nombre" type="text" autocomplete="name" required>
+      <small data-error="nombre"></small>
+    </label>
+    <label class="campo">
+      <span>Correo</span>
+      <input name="correo" type="email" autocomplete="email" inputmode="email" required>
+      <small data-error="correo"></small>
+    </label>
+    <label class="campo">
+      <span>Teléfono</span>
+      <input name="telefono" type="tel" autocomplete="tel" inputmode="tel" required>
+      <small data-error="telefono"></small>
+    </label>
+    <label class="campo">
+      <span>¿Qué te interesa?</span>
+      <select name="interes">
+        <option>Un lote en la Etapa I</option>
+        <option>La Etapa II</option>
+        <option>La Etapa III</option>
+        <option>Las áreas comunes</option>
+        <option>Todavía no lo sé</option>
+      </select>
+    </label>
     <label class="campo">
       <span>Mensaje <em>(opcional)</em></span>
-      <textarea name="mensaje" rows="3" placeholder="Por ejemplo: busco desde 300 m², con vista a la laguna."></textarea>
+      <textarea name="mensaje" rows="2" placeholder="Por ejemplo: busco desde 300 m², con vista a la laguna."></textarea>
     </label>
     <!-- trampa para robots: nadie la ve, y quien la llene no es una persona -->
     <div class="trampa" aria-hidden="true"><label>No escribir aquí<input name="web" tabindex="-1" autocomplete="off"></label></div>
-    <button class="btn btn--primario consulta__enviar" type="submit">Enviar por WhatsApp</button>
+    <button class="boton consulta__enviar" type="submit">Enviar por WhatsApp</button>
     <p class="consulta__nota">Se abre WhatsApp con tus datos ya escritos; el mensaje lo envías tú.
        Esta página no guarda nada de lo que escribas.</p>
   </form>
 
-  <p class="consulta__o">o escríbenos directo</p>
-  <div class="acciones">
-    <a class="btn btn--primario" href="https://wa.me/51913401447" target="_blank" rel="noopener">WhatsApp</a>
-    <a class="btn" href="mailto:ventas@condominiosvillacasa.com">ventas@condominiosvillacasa.com</a>
+  <!-- Sólo lo confirmado: WhatsApp y correo. Las redes sociales de los datos del tour están
+       marcadas como EJEMPLO, así que aquí no hay «Síguenos» hasta que Administración las dé. -->
+  <div class="contacto">
+    <h3 class="antetitulo">Contáctanos</h3>
+    <p><a href="https://wa.me/51913401447" target="_blank" rel="noopener">WhatsApp +51 913 401 447</a></p>
+    <p><a href="mailto:ventas@condominiosvillacasa.com">ventas@condominiosvillacasa.com</a></p>
   </div>
-  <p class="nota">Las imágenes, planos y medidas son referenciales y pueden variar. La disponibilidad y los precios están sujetos a confirmación por el área comercial.</p>
 </section>
 
 </main>
 
+<!-- El menú. Con JS es el panel que abre la hamburguesa; sin JS es una lista de enlaces aquí
+     abajo, que también sirve. -->
+<nav class="menu" id="menu" aria-label="Secciones">
+  <ul class="menu__lista">
+    <li><a href="#recorrido">Recorrido</a></li>
+    <li><a href="#etapas">Las etapas</a></li>
+    <li><a href="#plano">Plano</a></li>
+    <li><a href="#comunes">Áreas comunes</a></li>
+    <li><a href="#galeria">Galería</a></li>
+    <li><a href="#llegar">Cómo llegar</a></li>
+    <li><a href="#contacto">Contacto</a></li>
+  </ul>
+  <p class="menu__tour"><a href="https://montelago-tour.condominiosvillacasa.com" target="_blank" rel="noopener">Recorrer el proyecto en 3D</a></p>
+</nav>
+
 <footer class="pie-web">
+  <img class="pie-web__logo" src="assets/img/logo-white.webp" alt="Montelago" width="1187" height="830" loading="lazy" decoding="async">
   <p>Villacasa Group S.A.C.</p>
-  <p><a href="https://montelago-tour.condominiosvillacasa.com" target="_blank" rel="noopener">Recorrer el proyecto</a></p>
+  <p class="nota">Las imágenes, planos y medidas son referenciales y pueden variar. La disponibilidad y los precios están sujetos a confirmación por el área comercial.</p>
 </footer>
 
-<a class="fija btn btn--primario" href="#contacto">Quiero información</a>
 <script src="assets/main.js" defer></script>
 </body>
 </html>

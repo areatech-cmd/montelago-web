@@ -1,8 +1,10 @@
-// Lo único que necesita JS: que las secciones aparezcan al hacer scroll, y el vídeo de portada.
+// Lo que necesita JS: que las secciones aparezcan al hacer scroll, el menú de la hamburguesa,
+// los dos vídeos de fondo (portada y lema), el recorrido sobre la aérea, la galería y el
+// formulario.
 //
 // Todo lo de aquí es un añadido. Si el JS no carga, no se ejecuta o falla, la página se ve
-// entera igual y la portada enseña su foto. Una animación que no funciona no puede dejar una
-// página de venta en blanco.
+// entera igual: la portada enseña su foto, el recorrido es la aérea con su lista y el menú es una
+// lista al final. Una animación que no funciona no puede dejar una página de venta en blanco.
 document.documentElement.classList.add('js')
 
 /* ---------- Las secciones aparecen al entrar en pantalla ---------- */
@@ -23,19 +25,16 @@ if (quieto || !('IntersectionObserver' in window)) {
   setTimeout(todas, 2500) // red de seguridad, por si el observador no se dispara
 }
 
-/* ---------- El botón fijo, sólo cuando hace falta ---------- */
-// En la portada ya hay un «Quiero información» a la vista; el fijo se le montaba encima en
-// pantalla estrecha y quedaban dos botones iguales pegados. Aparece al dejar atrás la portada.
+/* ---------- Lo que depende de dónde está el scroll ---------- */
+// Un ÚNICO manejador para las dos cosas que miran el scroll de toda la página: el enlace marcado
+// del menú y la pausa del vídeo de la portada. (El recorrido tiene el suyo, más abajo, porque
+// sólo trabaja mientras se ve.)
 //
-// Esto va con el scroll a pelo, NO con IntersectionObserver, y es a propósito. Con el
-// observador el botón se quedaba escondido para siempre: la clase se pone al arrancar y la
-// llamada que debía quitarla no llegaba nunca. El botón de contacto es el que vende; no puede
-// depender de un aviso que quizá no venga. Y si el JS entero falla, la clase no se pone y el
-// botón se ve siempre: el lado seguro.
-const fijo = document.querySelector('.fija')
+// Sin requestAnimationFrame: mide y decide en el acto. Una versión anterior agrupaba los avisos
+// en un rAF y, donde el navegador no pinta, el «ya lo pedí» se quedaba puesto y nada se movía
+// más. Son unas pocas lecturas por evento, sin escribir nada entre medias: no hay reflujo que
+// ahorrar.
 const portada = document.querySelector('.portada')
-const barra = document.querySelector('.menu')
-const contacto = document.querySelector('#contacto')
 const videoPortada = document.querySelector('.portada__video')
 // cada enlace del menú con la sección a la que apunta, resuelto una sola vez
 const enlaces = [...document.querySelectorAll('.menu__lista a')]
@@ -43,23 +42,9 @@ const enlaces = [...document.querySelectorAll('.menu__lista a')]
   .filter((e) => e.seccion)
 
 if (portada) {
-  // Un ÚNICO manejador para las tres cosas que dependen de dónde está el scroll: el botón fijo,
-  // el fondo de la barra y el enlace marcado. Tres observadores separados harían tres veces el
-  // mismo trabajo y podrían contradecirse.
-  //
-  // Sin requestAnimationFrame ni temporizadores: mide y decide en el acto. Una versión anterior
-  // agrupaba los avisos en un rAF y, donde el navegador no pinta, el «ya lo pedí» se quedaba
-  // puesto y nada se movía más. Son unas pocas lecturas por evento de scroll, sin escribir nada
-  // entre medias: no hay reflujo que ahorrar.
   let activo = null
   let pausadoPorScroll = false
   const decidir = () => {
-    const enPortada = portada.getBoundingClientRect().bottom > innerHeight / 2
-    // en el formulario tampoco hace falta: ahí está el botón de enviar, y el fijo tapaba los campos
-    const enContacto = contacto && contacto.getBoundingClientRect().top < innerHeight * 0.85
-    if (fijo) fijo.classList.toggle('fija--oculta', enPortada || !!enContacto)
-    if (barra) barra.classList.toggle('menu--solido', !enPortada)
-
     // El vídeo de la portada no tiene por qué seguir girando cuando nadie lo ve: en un móvil es
     // batería y procesador gastados mientras se lee el resto. Se pausa al salir y sigue al volver.
     // Sólo si ya arrancó (tiene la clase visible): antes de eso lo decide el bloque del vídeo.
@@ -89,6 +74,44 @@ if (portada) {
   addEventListener('scroll', decidir, { passive: true })
   addEventListener('resize', decidir, { passive: true })
   decidir()
+}
+
+/* ---------- El menú de la hamburguesa ---------- */
+// Sin JS el menú es una lista al final de la página y el botón ni aparece (lleva «hidden» en el
+// HTML). Con JS el menú pasa a ser un panel a pantalla completa que abre el botón de la píldora.
+//
+// Abierto, lo de detrás queda «inert»: ni el teclado ni el lector de pantalla se pierden por la
+// página que está tapada. La píldora queda fuera del inert porque su botón es el que cierra.
+// Escape también cierra, y el foco vuelve al botón, que es donde estaba.
+const menu = document.querySelector('#menu')
+const botonMenu = document.querySelector('.pildora__menu')
+if (menu && botonMenu) {
+  const detras = [...document.querySelectorAll('.salto, .portada, main, .pie-web, .pildora__cta')]
+  menu.classList.add('menu--panel')
+  botonMenu.hidden = false
+  const etiqueta = botonMenu.querySelector('.oculto')
+
+  const abrir = (si) => {
+    menu.classList.toggle('abierto', si)
+    botonMenu.setAttribute('aria-expanded', String(si))
+    if (etiqueta) etiqueta.textContent = si ? 'Cerrar el menú' : 'Menú'
+    document.documentElement.classList.toggle('menu-abierto', si)
+    detras.forEach((el) => { el.inert = si })
+    if (si) menu.querySelector('a')?.focus()
+  }
+  // cerrado, el panel tampoco se puede recorrer con el tabulador aunque esté en el DOM
+  menu.inert = true
+  const alternar = (si) => { menu.inert = !si; abrir(si) }
+
+  botonMenu.addEventListener('click', () => alternar(botonMenu.getAttribute('aria-expanded') !== 'true'))
+  // al elegir una sección se cierra y el navegador sigue el enlace como siempre
+  menu.addEventListener('click', (ev) => { if (ev.target.closest('a')) alternar(false) })
+  addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape' && botonMenu.getAttribute('aria-expanded') === 'true') {
+      alternar(false)
+      botonMenu.focus()
+    }
+  })
 }
 
 /* ---------- El vídeo de la portada ---------- */
@@ -128,6 +151,168 @@ if (video) {
     video.load()
   } else {
     video.remove()
+  }
+}
+
+/* ---------- Los vídeos de fondo: el lema y las áreas comunes ---------- */
+// Las tomas oficiales en bucle detrás del texto: la cenital de la Etapa I en el lema, el mirador
+// y la piscina en sus áreas. Son los clips de 720 de la galería (de 0,4 a 1 MB), y cada uno se
+// pide sólo cuando su sección está a punto de entrar en pantalla: quien no baja hasta ahí no lo
+// descarga. Las mismas reglas que la portada: con ahorro de datos, 2G o movimiento reducido se
+// queda la foto. Y cada uno se pausa al salir de la vista, para que no haya tres girando a la vez.
+const fondos = [...document.querySelectorAll('video.fondo-vivo')]
+if (fondos.length) {
+  const con = navigator.connection || {}
+  const sinVideo = quieto || con.saveData || /(^|-)2g$/.test(con.effectiveType || '') ||
+    /[?&]foto=1/.test(location.search) || !('IntersectionObserver' in window)
+  if (sinVideo) {
+    fondos.forEach((v) => v.remove())
+  } else {
+    const arrancar = (v) => {
+      v.dataset.pedido = '1'
+      v.src = v.dataset.src
+      v.preload = 'auto'
+      v.addEventListener('canplay', () => {
+        v.classList.add('visible')
+        if (v.dataset.dentro === '1') v.play().catch(() => {})
+      }, { once: true })
+      v.addEventListener('error', () => v.remove(), { once: true })
+      v.load()
+    }
+    const ojoFondos = new IntersectionObserver((entradas) => {
+      entradas.forEach((e) => {
+        const v = e.target.querySelector('video.fondo-vivo')
+        if (!v) return
+        v.dataset.dentro = e.isIntersecting ? '1' : ''
+        if (e.isIntersecting && !v.dataset.pedido) arrancar(v)
+        else if (v.classList.contains('visible')) {
+          if (e.isIntersecting) v.play().catch(() => {})
+          else v.pause()
+        }
+      })
+    }, { rootMargin: '200px 0px' })
+    fondos.forEach((v) => (v.dataset.src ? ojoFondos.observe(v.parentElement) : v.remove()))
+  }
+}
+
+/* ---------- El recorrido sobre la aérea ---------- */
+// La sección mide una pantalla por paso; la escena se queda pegada arriba y, según cuánto se ha
+// bajado, la cámara va de un punto del masterplan al siguiente: se detiene un rato en cada uno
+// (ahí aparece su nombre y su ficha) y viaja entre medias.
+//
+// La «cámara» es un transform sobre el lienzo (la aérea y sus puntos): translate y scale, nada
+// más. Es lo único que el navegador puede mover sin volver a maquetar la página, y por eso el
+// scroll no se traba ni en un teléfono modesto. Se pinta como mucho una vez por fotograma.
+//
+// Con movimiento reducido no hay viaje: la foto con los puntos numerados y la lista. Sin JS, ni
+// eso: la foto y la lista. Las dos cosas las resuelve el CSS sin ayuda.
+const recorrido = document.querySelector('.recorrido')
+if (recorrido) {
+  const lienzo = recorrido.querySelector('.recorrido__lienzo')
+  const imagen = recorrido.querySelector('.recorrido__img')
+  const pines = [...recorrido.querySelectorAll('.pin')]
+  const fichas = [...recorrido.querySelectorAll('.paso')]
+
+  // Las posiciones van como CSS custom properties y no como style="" en el HTML: la CSP de la
+  // página prohíbe los estilos escritos en el marcado, pero no los que pone el JS por el CSSOM.
+  pines.forEach((p) => {
+    p.style.setProperty('--x', p.dataset.x)
+    p.style.setProperty('--y', p.dataset.y)
+  })
+
+  if (quieto) {
+    recorrido.classList.add('recorrido--quieto')
+  } else {
+    recorrido.classList.add('recorrido--viaje')
+    recorrido.style.setProperty('--pasos', String(fichas.length + 1))
+
+    // la proporción de la aérea, leída de sus width/height del HTML (los pone generar.py)
+    const prop = (+imagen.getAttribute('width') || 16) / (+imagen.getAttribute('height') || 9)
+    const pinDe = (n) => pines.find((p) => p.dataset.paso === String(n))
+    let ancho = 0, alto = 0, W = 0, H = 0, vertical = false
+
+    // Dónde mira la cámara en cada paso: un punto de la imagen (en fracción) y un zoom relativo
+    // a la aérea «a cover». El paso 0 es la vista general: en horizontal, la aérea entera; en un
+    // móvil en vertical, alejada lo más posible sin dejar bandas grandes, para que se entienda
+    // el conjunto antes de acercarse.
+    const camaras = () => fichas.map((f) => {
+      const n = f.dataset.paso
+      const p = pinDe(n)
+      if (!p) {
+        const cabe = Math.min(ancho / W, alto / H)
+        return { x: 0.62, y: 0.6, z: vertical ? Math.min(1, cabe * 1.5) : 1 }
+      }
+      return { x: +p.dataset.x, y: +p.dataset.y, z: vertical ? 0.78 : 1.45 }
+    })
+    let tomas = []
+
+    const medir = () => {
+      ancho = innerWidth
+      alto = recorrido.querySelector('.recorrido__escena').clientHeight || innerHeight
+      vertical = alto > ancho
+      W = Math.max(ancho, alto * prop)
+      H = W / prop
+      lienzo.style.setProperty('--w', W + 'px')
+      lienzo.style.setProperty('--h', H + 'px')
+      tomas = camaras()
+    }
+
+    // Dónde cae el punto mirado en la pantalla: en horizontal, algo a la derecha del centro,
+    // porque la ficha va abajo a la izquierda; en vertical, en el tercio de arriba, porque la
+    // ficha ocupa la parte de abajo.
+    const encuadre = (c) => {
+      const ox = vertical ? 0.5 : 0.58
+      const oy = vertical ? 0.36 : 0.45
+      let tx = ancho * ox - c.z * c.x * W
+      let ty = alto * oy - c.z * c.y * H
+      // que la imagen no deje ver lo que hay detrás: si es más grande que la pantalla, no se
+      // despega de los bordes; si es más chica (la vista general en vertical), se centra
+      const zw = c.z * W, zh = c.z * H
+      tx = zw >= ancho ? Math.min(0, Math.max(ancho - zw, tx)) : (ancho - zw) / 2
+      ty = zh >= alto ? Math.min(0, Math.max(alto - zh, ty)) : (alto - zh) / 2
+      return { tx, ty }
+    }
+
+    const suave = (t) => t * t * (3 - 2 * t)
+    let activo = -1
+
+    const pintar = () => {
+      const r = recorrido.getBoundingClientRect()
+      const recorrible = r.height - alto
+      if (recorrible <= 0 || !tomas.length) return
+      const avance = Math.min(1, Math.max(0, -r.top / recorrible))
+      const pos = avance * (tomas.length - 1)
+      const i = Math.min(tomas.length - 2, Math.floor(pos))
+      // en cada paso la cámara se queda quieta el 35 % del tramo a cada lado y viaja en el 30 %
+      // del medio: así hay tiempo de leer la ficha sin tener que parar el dedo justo
+      const f = pos - i
+      const t = suave(Math.min(1, Math.max(0, (f - 0.35) / 0.3)))
+      const a = tomas[i], b = tomas[i + 1] || a
+      const c = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t }
+      const { tx, ty } = encuadre(c)
+      lienzo.style.transform = 'translate3d(' + tx.toFixed(1) + 'px,' + ty.toFixed(1) + 'px,0) scale(' + c.z.toFixed(4) + ')'
+      lienzo.style.setProperty('--z', c.z.toFixed(4))
+
+      const cual = Math.round(pos)
+      if (cual !== activo) {
+        activo = cual
+        fichas.forEach((el) => el.classList.toggle('activo', el.dataset.paso === String(cual)))
+        pines.forEach((el) => el.classList.toggle('activo', el.dataset.paso === String(cual)))
+      }
+    }
+    // A diferencia del manejador general, aquí sí se agrupa en un fotograma: esto escribe un
+    // transform en cada evento y los eventos de scroll llegan más seguido de lo que se pinta.
+    // Sin bandera de «ya lo pedí» —la que dejó trabada la versión anterior del menú—: cada
+    // evento cancela el fotograma pendiente y pide otro, así que nunca se queda nada colgado.
+    let fotograma = 0
+    const pedir = () => {
+      cancelAnimationFrame(fotograma)
+      fotograma = requestAnimationFrame(pintar)
+    }
+    medir()
+    pintar()
+    addEventListener('scroll', pedir, { passive: true })
+    addEventListener('resize', () => { medir(); pedir() }, { passive: true })
   }
 }
 

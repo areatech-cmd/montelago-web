@@ -3,9 +3,23 @@
 Una sola página, de la aérea a pantalla completa hasta el formulario, para quien llega de un
 anuncio y no va a recorrer el tour entero. Termina llevando al tour.
 
-Por orden: portada con el vídeo, las cifras, las tres etapas, el plano, las áreas comunes, la
-galería de clips, cómo llegar y el formulario. Arriba una barra con las secciones; abajo, un
-botón de contacto que aparece al dejar la portada.
+Por orden: portada con el vídeo, el lema sobre la toma cenital, el recorrido sobre la aérea, las
+cifras, las tres etapas, el plano, las áreas comunes (la Laguna artificial 1 y el Club House a
+pantalla completa con su clip de fondo, y las demás en rejilla), la galería de clips, cómo llegar
+y el formulario. Arriba a la izquierda, siempre a la vista, una píldora con el menú y «Quiero
+información».
+
+La composición sigue la de damare.gt —oscuro, mucha imagen, poco texto, mayúsculas finas y
+espaciadas, una línea manuscrita de acento— con los colores de Montelago. Su pieza central, el
+**recorrido**, es la aérea oficial de la portada con los puntos oficiales del masterplan del tour:
+al bajar, la cámara va de la entrada a la segunda laguna y en cada punto sale su nombre y su
+texto. No es un render nuevo ni un plano dibujado aquí: es la misma imagen y los mismos puntos que
+el tour. Monte Hermoso, el condominio vecino, no entra. Con movimiento reducido es la foto con los
+puntos numerados; sin JS, la foto y la lista.
+
+Las cuatro frases que no vienen del tour (el titular de la portada, la línea manuscrita y el
+texto de la vista general del recorrido) están juntas al principio de `scripts/generar.py`, para
+cambiarlas sin buscar.
 
 **Esto es un proyecto aparte del tour.** El tour vive en `../WEB3D` y se publica en
 `montelago-tour.condominiosvillacasa.com`. Esta web no depende de él para funcionar: toma sus
@@ -16,11 +30,12 @@ textos e imágenes una vez, al generarse, y después es HTML plano.
 ```
 index.html             generado — no editar a mano
 assets/estilos.css     los colores y la retícula
-assets/main.js         el único JS: aparecer al scroll, el botón fijo, el vídeo,
-                       la galería y el formulario
+assets/main.js         el único JS: aparecer al scroll, el menú, los dos vídeos de
+                       fondo, el recorrido, la galería y el formulario
 assets/img/            renders oficiales copiados del tour (8 MB)
 assets/video/          la aérea de la portada (720 y 1080) y los 7 clips en 720 (16 MB)
-assets/fuentes/        Montserrat variable: un archivo para los 3 pesos, 38 KB
+assets/fuentes/        Montserrat variable (un archivo, del 300 al 700, 38 KB) y la manuscrita
+                       Allura (26 KB, licencia OFL al lado)
 scripts/generar.py     arma index.html con los datos del tour
 scripts/traer_medios.py  copia imágenes y clips, y compone el icono y la tarjeta
 sitemap.xml, robots.txt  generados

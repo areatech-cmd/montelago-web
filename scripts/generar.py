@@ -37,6 +37,36 @@ RAIZ = Path(__file__).resolve().parent.parent
 # de la empresa, se corre con --url https://montelago.condominiosvillacasa.com/
 PUBLICA = 'https://areatech-cmd.github.io/montelago-web/'
 
+# --- Los textos que NO vienen del tour ---------------------------------------------------------
+# Todo lo demás de la página es texto de Arquitectura, palabra por palabra. Estas cuatro frases
+# son de esta página y están aquí juntas para que quien decida el texto las encuentre sin buscar.
+# Ninguna afirma nada que el tour no diga:
+#   · el titular de la portada sale del texto oficial de la Etapa I («lotes residenciales
+#     articulados alrededor de una laguna artificial»). No dice «frente a la laguna» porque no
+#     todos los lotes la tienen delante, y eso es justo lo que un comprador entendería.
+#   · la línea manuscrita resume la descripción oficial («una experiencia de vida en contacto
+#     con la naturaleza»).
+# PENDIENTE: que Comercial dé el visto bueno a las dos.
+TITULAR_PEQUENO = 'Lotes residenciales · Condominio club'
+TITULAR_GRANDE = 'Alrededor de la laguna'
+LEMA_MANUSCRITO = ('una vida en contacto', 'con la naturaleza')
+TEXTO_VISTA_GENERAL = ('Tres etapas y dos lagunas artificiales. Desliza para recorrerlo de la '
+                       'entrada a la segunda laguna.')
+
+# En qué orden recorre la aérea el viaje de la página: de la entrada hacia el fondo, que es
+# como se llega. Un punto nuevo que Arquitectura añada al tour entra solo, al final, por su
+# posición de izquierda a derecha. Monte Hermoso NO entra: es el condominio vecino, no forma
+# parte del proyecto, y en un recorrido de venta parecería que sí (se filtra por type=vecino).
+# Los clips que salen además a pantalla completa, de fondo, cada uno con el área común que anima.
+# Se emparejan por el render oficial del que sale el clip: el de «mirador» es la animación de
+# media/renders/mirador-laguna.webp, que es una foto de la Laguna artificial 1; el de «piscina»,
+# la de piscina-club-house.webp, de la Zona deportiva y Club House. Así el texto que va encima es
+# el oficial de esa área y no uno escrito aquí.
+CLIPS_DE_FONDO = ('mirador', 'piscina')
+
+ORDEN_RECORRIDO = ('ingreso', 'residencial', 'lago-central', 'etapa-3', 'casa-club',
+                   'etapa-2', 'lago-norte')
+
 
 def esc(s):
     return html.escape(str(s or ''), quote=True)
@@ -168,7 +198,7 @@ def faltan(pagina):
     Un render que el tour renombró deja aquí un <img> roto que nadie ve hasta que lo ve un
     cliente. Mejor avisar al generar.
     """
-    rutas = re.findall(r'(?:src|href|poster|data-720|data-1080)="(assets/[^"#?]+)', pagina)
+    rutas = re.findall(r'(?:src|href|poster|data-src|data-720|data-1080)="(assets/[^"#?]+)', pagina)
     return sorted({r for r in rutas if not (RAIZ / r).exists()})
 
 
@@ -270,6 +300,27 @@ def main():
         amenidades.append({'nombre': a['name'], 'texto': a.get('shortText', ''),
                            'foto': img(foto), 'rasgos': (a.get('features') or [])[:5]})
 
+    # --- Las áreas que salen a pantalla completa con su clip de fondo ---
+    # Esas dos ya no se repiten en la rejilla de debajo: saldrían dos veces seguidas.
+    ambientes = []
+    for clave in CLIPS_DE_FONDO:
+        clip = next((g for g in p['gallery']['items']
+                     if Path(g.get('url') or '').name.startswith(clave + '-')
+                     and (g.get('url') or '').endswith('.mp4')), None)
+        area = next((a for a in p['amenities']['items']
+                     if any(Path(i.get('url') or '').name.startswith(clave)
+                            for i in a.get('images', []))), None)
+        if not clip or not area:
+            print(f'  AVISO  el clip de fondo «{clave}» no está en la galería o no casa con un área')
+            continue
+        ambientes.append({'id': area.get('id', clave), 'nombre': area['name'],
+                          'texto': area.get('shortText', ''), 'rasgos': area.get('features') or [],
+                          'clip_nombre': clip.get('label', ''),
+                          'foto': img(clip.get('posterUrl', '')),
+                          'clip': 'assets/video/' + Path(clip['url']).name.replace('-1080.mp4', '-720.mp4')})
+    con_fondo = {a['nombre'] for a in ambientes}
+    amenidades = [a for a in amenidades if a['nombre'] not in con_fondo]
+
     # --- Galería: los clips oficiales, en su versión de 720 ---
     clips = []
     for g in p['gallery']['items']:
@@ -283,9 +334,38 @@ def main():
     plano = next((g for k, g in galeria.items() if 'masterplan-general' in (g.get('url') or '')), None)
     mapa = next((g for k, g in galeria.items() if 'mapa-rutas' in (g.get('url') or '')), None)
 
+    # El fondo de la sección del lema: la toma cenital oficial de la Etapa I, la de la galería.
+    # Se usa la de 720, que ya está aquí por la galería: detrás de un velo oscuro no se distingue
+    # de la de 1080, y así esta sección no añade ni un byte que la página no tuviera ya.
+    cenital = next((g for g in galeria.values() if 'cenital' in (g.get('url') or '')), None) or {}
+    lema_foto = img(cenital.get('posterUrl', ''))
+    lema_clip = ('assets/video/' + Path(cenital['url']).name.replace('-1080.mp4', '-720.mp4')
+                 if cenital.get('url') else '')
+
+    # --- El recorrido sobre la aérea: los puntos oficiales del masterplan, en orden de visita ---
+    # Las posiciones son las del tour, en el espacio del viewBox del masterplan (1920x1080, el
+    # mismo de la aérea: HotspotLayer.vue las pinta como pin/viewBox en %). Aquí se pasan a
+    # fracción de la imagen para que main.js las coloque sin saber de píxeles.
+    portada = img(mp['stops'][0]['posterUrl'])
+    vbw, vbh = mp.get('viewBox') or (1920, 1080)
+    m = medidas(RAIZ / portada)
+    if m and abs(m[0] / m[1] - vbw / vbh) > 0.01:
+        # si un día la aérea llega con otra proporción, los puntos caerían en otro sitio
+        print(f'  AVISO  la aérea mide {m[0]}x{m[1]} y el viewBox es {vbw}x{vbh}: '
+              'los puntos del recorrido quedarían corridos')
+    puntos = [h for h in mp['hotspots']
+              if h.get('pin') and h.get('type') != 'vecino' and str(h.get('stop', '0')) == '0']
+    puntos.sort(key=lambda h: (ORDEN_RECORRIDO.index(h['id']) if h['id'] in ORDEN_RECORRIDO
+                               else len(ORDEN_RECORRIDO), h['pin'][0]))
+    pasos = [{'n': 0, 'label': 'Vista general', 'texto': TEXTO_VISTA_GENERAL, 'x': None}]
+    for i, h in enumerate(puntos, 1):
+        pasos.append({'n': i, 'label': h['label'], 'texto': h.get('shortText', ''),
+                      'x': h['pin'][0] / vbw, 'y': h['pin'][1] / vbh})
+
     # --- Contacto: sólo lo confirmado (ver el docstring) ---
     c = proyecto.get('contact', {})
     wa = (c.get('whatsAppNumber') or '').replace(' ', '').replace('+', '')
+    wa_visible = c.get('whatsAppNumber') or ''
     correo = c.get('email', '')
 
     # El logo en WebP sin pérdida si traer_medios.py lo dejó: mismos píxeles, la mitad del peso
@@ -325,8 +405,22 @@ def main():
         nombre=esc(proyecto['name']),
         tagline=esc(proyecto['tagline']),
         descripcion=esc(proyecto['description']),
-        portada=img(mp['stops'][0]['posterUrl']),
+        portada=portada,
         logo=esc(logo),
+        titular_pequeno=esc(TITULAR_PEQUENO), titular_grande=esc(TITULAR_GRANDE),
+        lema_1=esc(LEMA_MANUSCRITO[0]), lema_2=esc(LEMA_MANUSCRITO[1]),
+        lema_foto=lema_foto, dim_lema=dim(lema_foto), lema_clip=lema_clip,
+        pines='\n'.join(
+            f'      <span class="pin" data-paso="{q["n"]}" data-x="{q["x"]:.4f}" data-y="{q["y"]:.4f}">'
+            f'<span class="pin__n">{q["n"]:02d}</span>'
+            f'<span class="pin__nombre">{esc(q["label"])}</span></span>'
+            for q in pasos if q['x'] is not None),
+        pasos='\n'.join(
+            f'''        <li class="paso" data-paso="{q['n']}">
+          <span class="paso__n" aria-hidden="true">{q['n']:02d} / {len(pasos) - 1:02d}</span>
+          <h3>{esc(q['label'])}</h3>
+          <p>{esc(q['texto'])}</p>
+        </li>''' for q in pasos),
         cifras='\n'.join(
             f'      <div class="dato"><strong>{esc(v)}</strong><span>{esc(t)}</span></div>'
             for v, t in cifras),
@@ -343,6 +437,18 @@ def main():
         <h3>{esc(a['nombre'])}</h3><p>{esc(a['texto'])}</p>
         <ul>{''.join(f'<li>{esc(r)}</li>' for r in a['rasgos'])}</ul>
       </article>''' for a in amenidades),
+        ambientes='\n'.join(
+            f'''<section class="ambiente" id="area-{esc(a['id'])}" aria-labelledby="area-{esc(a['id'])}-titulo">
+  <img class="ambiente__fondo" src="{a['foto']}" alt="{esc(a['clip_nombre'])}"{dim(a['foto'])} loading="lazy" decoding="async">
+  <video class="ambiente__video fondo-vivo" muted loop playsinline preload="none" data-src="{a['clip']}" aria-hidden="true"></video>
+  <div class="ambiente__velo"></div>
+  <div class="ambiente__texto">
+    <p class="antetitulo" aria-hidden="true">{esc(a['clip_nombre'])}</p>
+    <h2 id="area-{esc(a['id'])}-titulo">{esc(a['nombre'])}</h2>
+    <p>{esc(a['texto'])}</p>
+    <ul>{''.join(f'<li>{esc(r)}</li>' for r in a['rasgos'])}</ul>
+  </div>
+</section>''' for a in ambientes),
         clips='\n'.join(
             f'''      <article class="clip">
         <a class="clip__abrir" href="{c['clip']}" aria-label="Ver el clip: {esc(c['label'])}">
@@ -353,7 +459,7 @@ def main():
       </article>''' for c in clips),
         mapa_img=img((mapa or {}).get('url', '')),
         mapa_pie=esc((mapa or {}).get('label', '')),
-        wa=esc(wa), correo=esc(correo),
+        wa=esc(wa), wa_visible=esc(wa_visible), correo=esc(correo),
         tour=esc(proyecto.get('siteUrl') or 'https://montelago-tour.condominiosvillacasa.com'),
         aviso=esc(proyecto.get('disclaimer', '')),
         empresa=esc(proyecto.get('developer', {}).get('name', '')),
@@ -415,10 +521,10 @@ PLANTILLA = '''<!doctype html>
 <script type="application/ld+json">{jsonld}</script>
 
 <!-- Montserrat desde el propio sitio: la fuente de la marca, y la IP del visitante no viaja
-     a Google por leer una página. Es una fuente variable: UN archivo trae los tres pesos, así
-     que se precarga uno solo. Antes iban dos precargas de dos copias idénticas, y el navegador
-     bajaba el mismo archivo dos y tres veces. El crossorigin NO es opcional en una fuente,
-     aunque sea del mismo sitio. -->
+     a Google por leer una página. Es una fuente variable: UN archivo trae todos los pesos, así
+     que se precarga uno solo. El crossorigin NO es opcional en una fuente, aunque sea del mismo
+     sitio. La manuscrita (Allura) NO se precarga: sale en la segunda sección, y precargarla
+     sería pelearle el ancho de banda a la portada por algo que todavía no se ve. -->
 <link rel="preload" as="font" type="font/woff2" href="assets/fuentes/montserrat-400-latin.woff2" crossorigin>
 <link rel="stylesheet" href="assets/fuentes/montserrat.css">
 
@@ -427,33 +533,25 @@ PLANTILLA = '''<!doctype html>
 </head>
 <body>
 
-<!-- Para quien navega con el teclado: lo primero que se enfoca es un enlace que salta los seis
-     enlaces de la barra y va al contenido. Sólo se ve cuando tiene el foco. -->
+<!-- Para quien navega con el teclado: lo primero que se enfoca es un enlace que salta la
+     cabecera y va al contenido. Sólo se ve cuando tiene el foco. -->
 <a class="salto" href="#contenido">Ir al contenido</a>
 
-<!-- La barra va encima de la portada, transparente, y se vuelve verde al dejarla atrás. El logo
-     es blanco —es el único que entregó Arquitectura—, así que la barra sólida NO puede ser
-     blanca: sería un logo invisible. Verde marca y letras blancas, siempre las mismas.
+<!-- La píldora de arriba a la izquierda, como en la referencia: el menú y el botón que vende,
+     siempre a mano. Por eso ya no hay botón flotante abajo: éste no se va nunca de la vista.
+     El botón del menú sólo existe con JS (es JS quien abre el panel); sin JS el menú es una
+     lista normal al final de la página y la píldora se queda con su enlace de contacto. -->
+<header class="cabecera">
+  <div class="pildora">
+    <button class="pildora__menu" type="button" aria-expanded="false" aria-controls="menu" hidden>
+      <span class="hamburguesa" aria-hidden="true"><span></span></span>
+      <span class="oculto">Menú</span>
+    </button>
+    <a class="pildora__cta" href="#contacto">Quiero información</a>
+  </div>
+</header>
 
-     En pantalla estrecha los enlaces se desplazan de lado en vez de esconderse detrás de un
-     botón de hamburguesa. Un menú que hay que abrir es una cosa más que puede fallar, y aquí
-     todas las secciones caben de un toque. -->
-<nav class="menu" aria-label="Secciones">
-  <a class="menu__marca" href="#portada" aria-label="{nombre}, ir arriba">
-    <!-- alt vacío: el enlace que lo envuelve ya lleva su propia etiqueta -->
-    <img src="{logo}" alt=""{dim_logo}>
-  </a>
-  <ul class="menu__lista">
-    <li><a href="#etapas">El proyecto</a></li>
-    <li><a href="#plano">Plano</a></li>
-    <li><a href="#areas">Áreas comunes</a></li>
-    <li><a href="#galeria">Galería</a></li>
-    <li><a href="#llegar">Cómo llegar</a></li>
-    <li><a href="#contacto">Contacto</a></li>
-  </ul>
-</nav>
-
-<header class="portada" id="portada">
+<div class="portada" id="portada">
   <!-- La foto se ve siempre y de inmediato; el vídeo entra encima cuando ha bajado lo
        suficiente. Si el visitante pidió ahorro de datos, o va por una conexión lenta, o tiene
        el movimiento reducido, el vídeo no se baja: se queda la foto. Eso lo decide main.js. -->
@@ -462,50 +560,94 @@ PLANTILLA = '''<!doctype html>
          data-720="assets/video/portada-720.mp4" data-1080="assets/video/portada-1080.mp4"
          aria-hidden="true"></video>
   <div class="portada__velo"></div>
-  <div class="portada__centro">
-    <!-- El logo ES el título de la página: su texto alternativo hace de h1. Antes la página no
-         tenía ningún h1 y para un buscador —o para quien la lee con un lector de pantalla— eso
-         es una página sin nombre. -->
-    <h1 class="portada__titulo"><img class="portada__logo" src="{logo}" alt="{nombre} · {tagline}"{dim_logo}></h1>
-    <p class="tagline">{tagline}</p>
-    <p class="lead">{descripcion}</p>
-    <div class="acciones">
-      <a class="btn btn--primario" href="{tour}" target="_blank" rel="noopener">Recorrer el proyecto</a>
-      <a class="btn" href="#contacto">Quiero información</a>
-    </div>
-  </div>
-</header>
+  <!-- El logo ES el título de la página: su texto alternativo hace de h1. Arriba y al centro,
+       pequeño, como la marca de la referencia; lo grande es el titular de abajo. -->
+  <h1 class="portada__marca"><img class="portada__logo" src="{logo}" alt="{nombre} · {tagline}"{dim_logo}></h1>
+  <p class="portada__titular">
+    <span class="portada__antetitulo">{titular_pequeno}</span>
+    <span class="portada__grande">{titular_grande}</span>
+  </p>
+  <a class="portada__bajar" href="#lema" aria-label="Bajar a la siguiente sección"><span aria-hidden="true"></span></a>
+</div>
 
 <main id="contenido">
+
+<!-- El lema: la toma cenital oficial de la Etapa I de fondo, con velo, y encima la frase a
+     mano, la descripción oficial y el botón. El vídeo no se baja hasta que la sección está
+     cerca; mientras tanto, y para quien no quiere vídeo, queda su foto. -->
+<section class="lema" id="lema" aria-labelledby="lema-titulo">
+  <img class="lema__fondo" src="{lema_foto}" alt=""{dim_lema} loading="lazy" decoding="async">
+  <video class="lema__video fondo-vivo" muted loop playsinline preload="none" data-src="{lema_clip}" aria-hidden="true"></video>
+  <div class="lema__velo"></div>
+  <div class="lema__texto">
+    <h2 class="manuscrita" id="lema-titulo">{lema_1}<br>{lema_2}</h2>
+    <p>{descripcion}</p>
+    <a class="boton" href="#contacto"><span aria-hidden="true">+</span> Quiero información</a>
+  </div>
+</section>
+
+<!-- El recorrido: la aérea oficial y, al hacer scroll, la cámara va de punto en punto del
+     masterplan. Lo mueve main.js. Sin JS esto es la foto con la lista de puntos debajo; con
+     movimiento reducido, la foto con los puntos numerados y la misma lista. Las posiciones
+     (data-x, data-y) son fracciones de la imagen, sacadas de los puntos del tour. -->
+<section class="recorrido" id="recorrido" aria-labelledby="recorrido-titulo">
+  <a class="salto salto--recorrido" href="#cifras">Saltar el recorrido</a>
+  <div class="recorrido__escena">
+    <div class="recorrido__lienzo">
+      <img class="recorrido__img" src="{portada}" alt="Vista aérea de {nombre} con sus tres etapas"{dim_portada} loading="lazy" decoding="async">
+      <div class="recorrido__pines" aria-hidden="true">
+{pines}
+      </div>
+    </div>
+    <div class="recorrido__texto">
+      <h2 class="antetitulo" id="recorrido-titulo">Recorre {nombre}</h2>
+      <ol class="recorrido__pasos">
+{pasos}
+      </ol>
+    </div>
+  </div>
+</section>
 
 <section class="seccion cifras" id="cifras" aria-labelledby="cifras-titulo">
   <!-- el título no se ve —las cifras se explican solas—, pero sin él la sección es un bloque
        sin nombre para quien la recorre por encabezados con un lector de pantalla -->
-  <h2 class="oculto" id="cifras-titulo">Montelago en cifras</h2>
+  <h2 class="oculto" id="cifras-titulo">{nombre} en cifras</h2>
 {cifras}
 </section>
 
 <section class="seccion" id="etapas">
-  <h2>El proyecto, en tres etapas</h2>
+  <p class="antetitulo" aria-hidden="true">El proyecto</p>
+  <h2>Tres etapas</h2>
   <div class="rejilla">
 {etapas}
   </div>
 </section>
 
 <section class="seccion" id="plano">
+  <p class="antetitulo" aria-hidden="true">Plano general</p>
   <h2>Dónde está cada cosa</h2>
   <img class="ancha" src="{plano_img}" alt="{plano_pie}"{dim_plano} loading="lazy" decoding="async">
   <p class="pie">{plano_pie}</p>
 </section>
 
+<!-- Dos áreas comunes a pantalla completa, con su clip oficial de fondo como la toma del lema:
+     el vídeo se pide al acercarse, se pausa al salir y con movimiento reducido queda la foto.
+     Van con la rejilla de las demás dentro de un mismo bloque para que el menú apunte a «las
+     áreas comunes» y no a una en concreto, que podría dejar de existir. -->
+<div id="comunes">
+{ambientes}
+
 <section class="seccion" id="areas">
-  <h2>Áreas comunes</h2>
+  <p class="antetitulo" aria-hidden="true">Para todos</p>
+  <h2>Más áreas comunes</h2>
   <div class="rejilla">
 {amenidades}
   </div>
 </section>
+</div>
 
 <section class="seccion" id="galeria">
+  <p class="antetitulo" aria-hidden="true">Galería</p>
   <h2>El proyecto en movimiento</h2>
   <!-- Cada recuadro es una foto hasta que alguien lo pide: el clip no se baja al entrar. Sin
        JS el enlace abre el vídeo en el navegador, que es lo que un enlace a un .mp4 hace. -->
@@ -514,78 +656,93 @@ PLANTILLA = '''<!doctype html>
   </div>
   <p class="pie">No son grabaciones del lugar: son los renders oficiales de Arquitectura,
      animados. El recorrido completo, con sonido y a pantalla llena, está en el tour.</p>
+  <p><a class="boton boton--borde" href="{tour}" target="_blank" rel="noopener">Recorrer el proyecto en 3D</a></p>
 </section>
 
 <section class="seccion" id="llegar">
+  <p class="antetitulo" aria-hidden="true">Ubicación</p>
   <h2>Cómo llegar</h2>
   <img class="ancha" src="{mapa_img}" alt="{mapa_pie}"{dim_mapa} loading="lazy" decoding="async">
   <p class="pie">{mapa_pie}</p>
 </section>
 
 <section class="seccion cierre" id="contacto">
-  <h2>¿Te interesa un lote?</h2>
-  <p>Escríbenos y te contamos qué lotes quedan, sus medidas y las formas de pago.</p>
+  <p class="manuscrita manuscrita--chica" aria-hidden="true">conversemos</p>
+  <h2>Quiero información</h2>
+  <p class="cierre__intro">Déjanos tus datos y te contamos qué lotes quedan, sus medidas y las formas de pago.</p>
 
   <!-- El formulario sólo aparece si hay JS, porque es JS quien arma el mensaje: un formulario
-       sin sitio a donde enviar sería un botón que no hace nada. Sin JS quedan los dos enlaces
-       de abajo, que funcionan solos. -->
+       sin sitio a donde enviar sería un botón que no hace nada. Sin JS queda el bloque de
+       «Contáctanos» de abajo, que funciona solo. -->
   <form class="consulta" id="consulta" novalidate data-wa="{wa}" data-correo="{correo}">
-    <div class="consulta__fila">
-      <label class="campo">
-        <span>Nombre</span>
-        <input name="nombre" type="text" autocomplete="name" required>
-        <small data-error="nombre"></small>
-      </label>
-      <label class="campo">
-        <span>Teléfono</span>
-        <input name="telefono" type="tel" autocomplete="tel" inputmode="tel" required>
-        <small data-error="telefono"></small>
-      </label>
-    </div>
-    <div class="consulta__fila">
-      <label class="campo">
-        <span>Correo</span>
-        <input name="correo" type="email" autocomplete="email" inputmode="email" required>
-        <small data-error="correo"></small>
-      </label>
-      <label class="campo">
-        <span>¿Qué te interesa?</span>
-        <select name="interes">
-          <option>Un lote en la Etapa I</option>
-          <option>La Etapa II</option>
-          <option>La Etapa III</option>
-          <option>Las áreas comunes</option>
-          <option>Todavía no lo sé</option>
-        </select>
-      </label>
-    </div>
+    <label class="campo">
+      <span>Nombre</span>
+      <input name="nombre" type="text" autocomplete="name" required>
+      <small data-error="nombre"></small>
+    </label>
+    <label class="campo">
+      <span>Correo</span>
+      <input name="correo" type="email" autocomplete="email" inputmode="email" required>
+      <small data-error="correo"></small>
+    </label>
+    <label class="campo">
+      <span>Teléfono</span>
+      <input name="telefono" type="tel" autocomplete="tel" inputmode="tel" required>
+      <small data-error="telefono"></small>
+    </label>
+    <label class="campo">
+      <span>¿Qué te interesa?</span>
+      <select name="interes">
+        <option>Un lote en la Etapa I</option>
+        <option>La Etapa II</option>
+        <option>La Etapa III</option>
+        <option>Las áreas comunes</option>
+        <option>Todavía no lo sé</option>
+      </select>
+    </label>
     <label class="campo">
       <span>Mensaje <em>(opcional)</em></span>
-      <textarea name="mensaje" rows="3" placeholder="Por ejemplo: busco desde 300 m², con vista a la laguna."></textarea>
+      <textarea name="mensaje" rows="2" placeholder="Por ejemplo: busco desde 300 m², con vista a la laguna."></textarea>
     </label>
     <!-- trampa para robots: nadie la ve, y quien la llene no es una persona -->
     <div class="trampa" aria-hidden="true"><label>No escribir aquí<input name="web" tabindex="-1" autocomplete="off"></label></div>
-    <button class="btn btn--primario consulta__enviar" type="submit">Enviar por WhatsApp</button>
+    <button class="boton consulta__enviar" type="submit">Enviar por WhatsApp</button>
     <p class="consulta__nota">Se abre WhatsApp con tus datos ya escritos; el mensaje lo envías tú.
        Esta página no guarda nada de lo que escribas.</p>
   </form>
 
-  <p class="consulta__o">o escríbenos directo</p>
-  <div class="acciones">
-    <a class="btn btn--primario" href="https://wa.me/{wa}" target="_blank" rel="noopener">WhatsApp</a>
-    <a class="btn" href="mailto:{correo}">{correo}</a>
+  <!-- Sólo lo confirmado: WhatsApp y correo. Las redes sociales de los datos del tour están
+       marcadas como EJEMPLO, así que aquí no hay «Síguenos» hasta que Administración las dé. -->
+  <div class="contacto">
+    <h3 class="antetitulo">Contáctanos</h3>
+    <p><a href="https://wa.me/{wa}" target="_blank" rel="noopener">WhatsApp {wa_visible}</a></p>
+    <p><a href="mailto:{correo}">{correo}</a></p>
   </div>
-  <p class="nota">{aviso}</p>
 </section>
 
 </main>
 
+<!-- El menú. Con JS es el panel que abre la hamburguesa; sin JS es una lista de enlaces aquí
+     abajo, que también sirve. -->
+<nav class="menu" id="menu" aria-label="Secciones">
+  <ul class="menu__lista">
+    <li><a href="#recorrido">Recorrido</a></li>
+    <li><a href="#etapas">Las etapas</a></li>
+    <li><a href="#plano">Plano</a></li>
+    <li><a href="#comunes">Áreas comunes</a></li>
+    <li><a href="#galeria">Galería</a></li>
+    <li><a href="#llegar">Cómo llegar</a></li>
+    <li><a href="#contacto">Contacto</a></li>
+  </ul>
+  <p class="menu__tour"><a href="{tour}" target="_blank" rel="noopener">Recorrer el proyecto en 3D</a></p>
+</nav>
+
 <footer class="pie-web">
+  <img class="pie-web__logo" src="{logo}" alt="{nombre}"{dim_logo} loading="lazy" decoding="async">
   <p>{empresa}</p>
-  <p><a href="{tour}" target="_blank" rel="noopener">Recorrer el proyecto</a></p>
+  <p class="nota">{aviso}</p>
 </footer>
 
-<a class="fija btn btn--primario" href="#contacto">Quiero información</a>
 <script src="assets/main.js" defer></script>
 </body>
 </html>

@@ -37,6 +37,9 @@ IMAGENES_DE_GALERIA = ('masterplan-general', 'mapa-rutas')
 
 # Lo que se compone aquí y no viene tal cual del tour: no cuenta como sobrante.
 # (el logo en WebP también se compone, pero su nombre sale del del tour: se añade abajo)
+# El peso más fino que se declara de la Montserrat variable (ver la regla de la fuente abajo)
+PESO_FINO = 300
+
 COMPUESTAS = {'tarjeta-og.jpg', 'icono-32.png', 'icono-180.png'}
 
 
@@ -166,6 +169,12 @@ def main():
         src = pesos[0][1]
         shutil.copy2(src, fuentes / src.name)
         bajo, alto = pesos[0][0], pesos[-1][0]
+        if len(grupos) == 1 and len(pesos) > 1:
+            # Es la variable: el mismo archivo que Google sirve para «wght@100..900» (comprobado
+            # byte a byte el 26-10-2026). La página usa también el 300, el trazo fino de los
+            # titulares en mayúsculas espaciadas; declararlo no baja nada nuevo, y sin declararlo
+            # el navegador pintaría el 300 con el 400.
+            bajo = PESO_FINO
         reglas.append(
             '@font-face {\n'
             "  font-family: 'Montserrat';\n"
