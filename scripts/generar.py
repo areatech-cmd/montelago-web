@@ -347,6 +347,12 @@ def main():
     # mismo de la aérea: HotspotLayer.vue las pinta como pin/viewBox en %). Aquí se pasan a
     # fracción de la imagen para que main.js las coloque sin saber de píxeles.
     portada = img(mp['stops'][0]['posterUrl'])
+    portada_uhd = img(mp['stops'][0].get('posterUhdUrl', ''))
+    # El recorrido acerca la cámara hasta ×1,5: se ofrece también la aérea de 3840 px y el
+    # navegador escoge según el ancho real que ocupará (150vw), así sólo la bajan las
+    # pantallas que la van a notar.
+    recorrido_srcset = (f' srcset="{portada} 1920w, {portada_uhd} 3840w" sizes="150vw"'
+                        if portada_uhd and (RAIZ / portada_uhd).exists() else '')
     vbw, vbh = mp.get('viewBox') or (1920, 1080)
     m = medidas(RAIZ / portada)
     if m and abs(m[0] / m[1] - vbw / vbh) > 0.01:
@@ -465,6 +471,7 @@ def main():
         empresa=esc(proyecto.get('developer', {}).get('name', '')),
         base=esc(base),
         dim_portada=dim(img(mp['stops'][0]['posterUrl'])),
+        recorrido_srcset=recorrido_srcset,
         dim_logo=dim(logo),
         dim_plano=dim(img((plano or {}).get('url', ''))),
         dim_mapa=dim(img((mapa or {}).get('url', ''))),
@@ -594,7 +601,7 @@ PLANTILLA = '''<!doctype html>
   <a class="salto salto--recorrido" href="#cifras">Saltar el recorrido</a>
   <div class="recorrido__escena">
     <div class="recorrido__lienzo">
-      <img class="recorrido__img" src="{portada}" alt="Vista aérea de {nombre} con sus tres etapas"{dim_portada} loading="lazy" decoding="async">
+      <img class="recorrido__img" src="{portada}"{recorrido_srcset} alt="Vista aérea de {nombre} con sus tres etapas"{dim_portada} loading="lazy" decoding="async">
       <div class="recorrido__pines" aria-hidden="true">
 {pines}
       </div>

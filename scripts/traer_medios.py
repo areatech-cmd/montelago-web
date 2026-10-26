@@ -76,6 +76,10 @@ def main():
     # repositorio público que no salían en ninguna parte. El logo PNG tampoco se copia: la
     # página usa el WebP que se compone más abajo, directamente desde el del tour.
     quiero = [p['masterplan']['stops'][0]['posterUrl']]
+    # la versión de 3840 px, sólo para el recorrido: con la cámara acercada ×1,45 la de 1920 se
+    # veía blanda en pantallas grandes. El navegador la elige por srcset; un móvil no la baja.
+    if p['masterplan']['stops'][0].get('posterUhdUrl'):
+        quiero.append(p['masterplan']['stops'][0]['posterUhdUrl'])
     for g in p['gallery']['items']:
         if g.get('posterUrl'):
             quiero.append(g['posterUrl'])
