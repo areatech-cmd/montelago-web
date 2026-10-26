@@ -150,9 +150,12 @@ a { color: inherit; }
   display: flex; flex-direction: column; justify-content: center;
   padding: 90px 24px 40px; background: rgba(14, 42, 46, 0.97);
   opacity: 0; visibility: hidden;
-  transition: opacity .35s var(--ease), visibility .35s;
+  /* al cerrar, visibility espera a que acabe el fundido; al abrir cambia en el acto. Si también
+     se fundiera al abrir, el panel seguiría «hidden» en el instante en que main.js le pasa el
+     foco al primer enlace, y el foco se quedaría en ninguna parte */
+  transition: opacity .35s var(--ease), visibility 0s linear .35s;
 }
-.menu--panel.abierto { opacity: 1; visibility: visible; }
+.menu--panel.abierto { opacity: 1; visibility: visible; transition: opacity .35s var(--ease), visibility 0s; }
 .menu--panel .menu__lista { flex-direction: column; gap: 6px; }
 .menu--panel .menu__lista a {
   padding: 10px 0; color: var(--blanco);
