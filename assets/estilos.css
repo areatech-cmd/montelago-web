@@ -197,9 +197,12 @@ a { color: inherit; }
   font-size: clamp(11px, 1.3vw, 14px); font-weight: 500; letter-spacing: var(--abierto);
   color: var(--blanco);
 }
+/* en el teléfono, con el espaciado entero, «CLUB» caía sola en la segunda línea */
+@media (max-width: 520px) { .portada__antetitulo { font-size: 10.5px; letter-spacing: .16em; } }
 .portada__grande {
   margin-top: 12px;
-  font-size: clamp(30px, 6.4vw, 84px); font-weight: 300; line-height: 1.05;
+  /* tope de 72 px: con más, a 1500 px de ancho el titular llegaba a los dos bordes */
+  font-size: clamp(28px, 5.2vw, 72px); font-weight: 300; line-height: 1.05;
   letter-spacing: 0.14em;
   /* la última letra arrastra su espaciado a la derecha y el titular se ve descentrado */
   margin-right: -0.14em;

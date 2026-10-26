@@ -242,7 +242,10 @@ if (recorrido) {
         const cabe = Math.min(ancho / W, alto / H)
         return { x: 0.62, y: 0.6, z: vertical ? Math.min(1, cabe * 1.5) : 1 }
       }
-      return { x: +p.dataset.x, y: +p.dataset.y, z: vertical ? 0.78 : 1.45 }
+      // En vertical, la aérea a «cover» ya mide su alto exacto y un punto queda donde cae en la
+      // foto, que suele ser la mitad de abajo: justo detrás de la ficha. Con 1,5 la imagen pasa a
+      // medir más que la pantalla y la cámara tiene margen para subir el punto por encima.
+      return { x: +p.dataset.x, y: +p.dataset.y, z: vertical ? 1.5 : 1.45 }
     })
     let tomas = []
 
@@ -265,11 +268,12 @@ if (recorrido) {
       const oy = vertical ? 0.36 : 0.45
       let tx = ancho * ox - c.z * c.x * W
       let ty = alto * oy - c.z * c.y * H
-      // que la imagen no deje ver lo que hay detrás: si es más grande que la pantalla, no se
-      // despega de los bordes; si es más chica (la vista general en vertical), se centra
+      // Que la imagen no deje ver lo que hay detrás: si es más grande que la pantalla, no se
+      // despega de los bordes. Si es más chica (la vista general en vertical), se centra de lado
+      // y, de alto, se deja arriba, porque la parte de abajo es de la ficha.
       const zw = c.z * W, zh = c.z * H
       tx = zw >= ancho ? Math.min(0, Math.max(ancho - zw, tx)) : (ancho - zw) / 2
-      ty = zh >= alto ? Math.min(0, Math.max(alto - zh, ty)) : (alto - zh) / 2
+      ty = zh >= alto ? Math.min(0, Math.max(alto - zh, ty)) : Math.max(56, alto * oy - zh / 2)
       return { tx, ty }
     }
 
