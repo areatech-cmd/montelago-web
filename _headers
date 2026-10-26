@@ -1,39 +1,116 @@
-# Cabeceras para Cloudflare Pages / Netlify.
+# Cabeceras para Cloudflare Pages.
 #
-# Las imágenes llevan su nombre de siempre (no van con huella), así que NO se pueden cachear un
-# año: si se reemplaza un render, el visitante seguiría viendo el viejo. Un día es el equilibrio
-# razonable. El HTML no se cachea nunca, para que un cambio de texto o de cifras se vea al
-# momento: la página se regenera cada vez que cambia el inventario.
+# DÓNDE SE APLICA ESTO: sólo en Cloudflare. Donde la web está publicada hoy —GitHub Pages— este
+# archivo se ignora por completo (y además se sirve tal cual a quien lo pida, que no hace daño:
+# no hay nada secreto aquí). Pages pone sus propias cabeceras —diez minutos de caché para todo,
+# HSTS y nada más— y no hay forma de cambiarlas. Hasta la mudanza, esto es la intención escrita.
 #
 # OJO: en el tour este archivo NO se está aplicando y los medios salen con max-age=14400 (ver
-# consulta 15 del documento de pendientes). Si aquí pasa lo mismo, es el mismo problema de
-# configuración del hosting y conviene resolverlo de una vez para los dos sitios.
+# consulta 15 del documento de pendientes). Si al mudar esta web pasa lo mismo, es el mismo
+# problema de configuración del hosting y conviene resolverlo de una vez para los dos sitios.
 #
-# Y OJO TAMBIÉN: donde la web está publicada hoy —GitHub Pages— este archivo se ignora por
-# completo. Pages pone sus propias cabeceras (unos diez minutos para todo) y no hay forma de
-# cambiarlas. Esto sirve el día que el sitio se mueva a Cloudflare, y hasta entonces queda como
-# la intención escrita, no como algo que esté pasando.
+# UNA REGLA DE CLOUDFLARE QUE HAY QUE TENER PRESENTE: si dos bloques casan con la misma ruta y
+# ponen la misma cabecera, Cloudflare NO elige una: las junta separadas por coma. Un
+# «Cache-Control: no-cache, public, max-age=86400» es una contradicción que cada navegador lee a
+# su manera. Por eso aquí cada Cache-Control está en un bloque que no se pisa con ningún otro, y
+# las rutas se escriben por carpeta o por archivo, sin comodines a media ruta.
 
+# --- Lo que vale para todo el sitio -------------------------------------------------------------
+#
+# La política de contenido (CSP) dice de dónde puede venir cada cosa. Esta página no carga NADA
+# de fuera: ni fuentes de Google, ni analítica, ni mapas incrustados. Así que todo es 'self'.
+# Lo que sí sale hacia fuera —WhatsApp, el correo, el tour— son enlaces y ventanas nuevas, y a
+# eso la CSP no lo toca: no hace falta abrirle nada.
+#
+# El hash de script-src es el de la única línea de JS escrita dentro del HTML (la que marca la
+# clase «js» antes de pintar). La ficha JSON-LD también va en un <script>, pero es un bloque de
+# datos que el navegador no ejecuta, y la CSP no lo bloquea. generar.py recalcula el hash y lo
+# reescribe aquí cada vez que genera la página: si alguien cambia esa línea a mano en
+# index.html sin regenerar, el navegador la bloquea y el formulario no aparece. Ése es el
+# síntoma.
+#
+# Si algún día se activa algo de Cloudflare que inyecta código, hay que abrirle hueco aquí:
+#   · Web Analytics:  script-src https://static.cloudflareinsights.com
+#                     connect-src https://cloudflareinsights.com
+#   · Turnstile (ver docs/propuesta-captura-consultas.md):
+#                     script-src y frame-src https://challenges.cloudflare.com
+#   · Rocket Loader: no. Reescribe los <script> y rompe el hash; que quede apagado.
+#   · Email Obfuscation (Scrape Shield) cambia el mailto por /cdn-cgi/l/email-protection y
+#     carga un JS del propio dominio: 'self' ya lo cubre, no rompe nada.
+#
+# HSTS: un año. includeSubDomains afecta sólo a lo que cuelgue de este subdominio, no al resto
+# de condominiosvillacasa.com. Sin «preload», que es una decisión del dominio entero, no de esta
+# página.
+#
+# Permissions-Policy: la página no usa cámara, micrófono, ubicación ni pagos. Se apagan para que
+# ni un script que se colara pudiera pedirlos. La pantalla completa de los vídeos no se toca: por
+# defecto ya se permite a la propia página.
+#
+# COOP same-origin: WhatsApp se abre en otra ventana sin acceso de vuelta a ésta. Ya se abre con
+# noopener; esto lo garantiza aunque algún enlace se olvide de ponerlo.
 /*
+  Content-Security-Policy: default-src 'none'; script-src 'self' 'sha256-Du+OJKJSbdUgz5nrHeWWINvez6XKDDU/tyj/5c2uvwo='; style-src 'self'; img-src 'self'; font-src 'self'; media-src 'self'; connect-src 'self'; manifest-src 'self'; form-action 'self'; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), hid=(), bluetooth=(), midi=(), magnetometer=(), gyroscope=(), accelerometer=(), browsing-topics=()
+  Cross-Origin-Opener-Policy: same-origin
 
-# las dos formas de pedir lo mismo: la raíz y el archivo
+# --- Que los buscadores no indexen la dirección de pruebas --------------------------------------
+#
+# Cloudflare deja la web también en <proyecto>.pages.dev, además del dominio de la empresa. Si
+# Google indexa las dos, son dos copias de la misma página compitiendo. La canonical ya apunta al
+# dominio bueno, pero esto lo dice más claro. Las vistas previas de cada rama ya salen con
+# noindex por defecto; la línea de abajo es para la de producción.
+#
+# Si el proyecto de Cloudflare no se llama «montelago-web», hay que cambiar el nombre aquí.
+https://montelago-web.pages.dev/*
+  X-Robots-Tag: noindex
+
+# --- Cuánto puede guardar cada cosa el navegador ------------------------------------------------
+#
+# El HTML no se cachea nunca, para que un cambio de texto o de cifras se vea al momento: la
+# página se regenera cada vez que cambia el inventario. «no-cache» no quiere decir «no guardar»:
+# quiere decir «pregunta antes de usarlo». Si no cambió, el servidor contesta 304 y no se baja.
+#
+# Las dos formas de pedir lo mismo: la raíz y el archivo (Cloudflare redirige la segunda a la
+# primera, pero no cuesta nada cubrirla).
 /
   Cache-Control: no-cache
 
 /index.html
   Cache-Control: no-cache
 
+# El CSS y el JS van SIN huella en el nombre (estilos.css, no estilos.3f2a.css). Antes se
+# guardaban un día, y eso tiene una trampa: el HTML nuevo llega al momento, pero el CSS viejo
+# se queda hasta 24 horas, y un HTML nuevo con el CSS de ayer es una página descompuesta. Pesan
+# 13 y 11 KB: preguntar cada vez y recibir un 304 cuesta menos que ese riesgo. El día que
+# generar.py les ponga huella (?v=...), pasan a un año e «immutable».
+/assets/estilos.css
+  Cache-Control: no-cache
+
+/assets/main.js
+  Cache-Control: no-cache
+
+# Las imágenes llevan su nombre de siempre (no van con huella), así que NO se pueden cachear un
+# año: si se reemplaza un render, el visitante seguiría viendo el viejo. Un día es el equilibrio
+# razonable; y si se cuela un render viejo un día, se ve un render viejo, no una página rota.
 /assets/img/*
   Cache-Control: public, max-age=86400
 
-/assets/*.css
-  Cache-Control: public, max-age=86400
+# La fuente no cambia nunca. Una semana y no un año sólo porque en la misma carpeta va
+# montserrat.css, que nombra los archivos: si un día se renombran, los viejos tienen que seguir
+# ahí una semana para quien tenga el CSS anterior guardado.
+/assets/fuentes/*
+  Cache-Control: public, max-age=604800
 
-/assets/*.js
-  Cache-Control: public, max-age=86400
-
-# el vídeo tampoco lleva huella, pero cambia mucho menos que un render
+# El vídeo tampoco lleva huella, pero cambia mucho menos que un render
 /assets/video/*
   Cache-Control: public, max-age=604800
+
+/sitemap.xml
+  Cache-Control: public, max-age=3600
+
+/robots.txt
+  Cache-Control: public, max-age=3600

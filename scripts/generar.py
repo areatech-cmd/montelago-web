@@ -7,6 +7,10 @@ y la página se entera.
 
     python scripts/generar.py                      # usa ..\\WEB3D por defecto
     python scripts/generar.py --tour RUTA          # si el tour está en otro sitio
+    python scripts/generar.py --url https://montelago.condominiosvillacasa.com/
+
+Además de index.html escribe sitemap.xml y robots.txt, y pone al día en _headers el hash de la
+línea de JS que va dentro del HTML (si no, la CSP la bloquearía al cambiarla).
 
 Lo que NO hace, a propósito:
   · no inventa imágenes. Todas las fotos son renders oficiales copiados del tour (assets/img).
@@ -16,12 +20,15 @@ Lo que NO hace, a propósito:
 """
 
 import argparse
+import base64
+import hashlib
 import html
 import json
-import shutil
+import re
 from datetime import date
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 RAIZ = Path(__file__).resolve().parent.parent
 
@@ -79,6 +86,139 @@ def dim(url):
     return f' width="{m[0]}" height="{m[1]}"' if m else ''
 
 
+def normalizar_url(url):
+    """La dirección pública, comprobada: https, con dominio, sin ?consulta ni #ancla, y con la
+    barra final.
+
+    Se comprueba porque un error aquí no se ve en local —la página carga igual— y sale después
+    en todas partes a la vez: la canonical, la tarjeta de WhatsApp y el sitemap apuntando a una
+    dirección que no existe. «montelago.condominiosvillacasa.com» sin el https:// es un error
+    fácil de cometer y daría una canonical relativa. Se admite http sólo para localhost, que es
+    para probar.
+    """
+    url = (url or '').strip()
+    partes = urlsplit(url)
+    local = partes.hostname in ('localhost', '127.0.0.1')
+    if partes.scheme != 'https' and not (partes.scheme == 'http' and local):
+        raise SystemExit(f'--url tiene que empezar por https:// (llegó «{url}»)')
+    if not partes.hostname:
+        raise SystemExit(f'--url no tiene dominio (llegó «{url}»)')
+    if partes.query or partes.fragment:
+        raise SystemExit(f'--url no puede llevar ? ni # (llegó «{url}»)')
+    return url if url.endswith('/') else url + '/'
+
+
+def jsonld_seguro(ficha):
+    """La ficha JSON-LD lista para ir dentro de un <script>.
+
+    json.dumps no escapa «<»: si algún texto del tour trajera «</script>», cerraría la etiqueta
+    a mitad de la ficha y lo que viniera detrás se leería como HTML. Hoy los textos son de
+    Arquitectura y no lo traen, pero es una línea. \\u003c es el mismo carácter para cualquier
+    lector de JSON.
+    """
+    return (json.dumps(ficha, ensure_ascii=False, separators=(',', ':'))
+            .replace('<', '\\u003c').replace('>', '\\u003e').replace('&', '\\u0026'))
+
+
+def hashes_csp(pagina):
+    """Los hash sha256 de cada <script> escrito dentro del HTML que el navegador EJECUTA.
+
+    Los que llevan src no cuentan (los cubre 'self') y la ficha JSON-LD tampoco: es un bloque de
+    datos, no código, y la CSP no lo bloquea. El hash es del texto exacto entre las etiquetas,
+    espacios incluidos: por eso se calcula del HTML ya armado y no se teclea.
+    """
+    salida = []
+    for m in re.finditer(r'<script(?P<attrs>[^>]*)>(?P<js>.*?)</script>', pagina, re.S | re.I):
+        attrs = m['attrs']
+        if re.search(r'\bsrc\s*=', attrs, re.I):
+            continue
+        tipo = re.search(r'\btype\s*=\s*["\']?([^"\'\s>]+)', attrs, re.I)
+        if tipo and tipo.group(1).lower() not in ('text/javascript', 'module', 'application/javascript'):
+            continue
+        h = base64.b64encode(hashlib.sha256(m['js'].encode('utf-8')).digest()).decode('ascii')
+        salida.append(f"'sha256-{h}'")
+    return list(dict.fromkeys(salida))
+
+
+def sincronizar_csp(pagina):
+    """Reescribe el script-src de _headers con los hash de la página recién generada.
+
+    Sin esto, el día que alguien toque la línea de JS de la plantilla la CSP la bloquearía en
+    Cloudflare —en local y en GitHub Pages no se nota, porque ahí _headers no se aplica— y el
+    formulario dejaría de aparecer sin que nadie supiera por qué.
+    """
+    ruta = RAIZ / '_headers'
+    if not ruta.exists():
+        return
+    texto = ruta.read_text(encoding='utf-8')
+    nuevo_src = ' '.join(["script-src 'self'"] + hashes_csp(pagina))
+    nuevo, cuantos = re.subn(r"(?m)^(\s*Content-Security-Policy:.*?)script-src [^;\n]*",
+                             lambda m: m.group(1) + nuevo_src, texto)
+    if not cuantos:
+        print('  AVISO  _headers no tiene una Content-Security-Policy con script-src: no se tocó')
+        return
+    if nuevo != texto:
+        ruta.write_text(nuevo, encoding='utf-8')
+        print(f'_headers: script-src puesto al día ({nuevo_src})')
+
+
+def faltan(pagina):
+    """Los archivos de assets/ que la página nombra y no están en el disco.
+
+    Un render que el tour renombró deja aquí un <img> roto que nadie ve hasta que lo ve un
+    cliente. Mejor avisar al generar.
+    """
+    rutas = re.findall(r'(?:src|href|poster|data-720|data-1080)="(assets/[^"#?]+)', pagina)
+    return sorted({r for r in rutas if not (RAIZ / r).exists()})
+
+
+def lastmod(pagina, hoy):
+    """La fecha de última modificación para el sitemap.
+
+    Si la página que sale es idéntica a la que ya había, se conserva la fecha de antes. Poner
+    «hoy» cada vez que se corre el script le dice a Google que la página cambió cuando no
+    cambió, y Google aprende a no creerse el lastmod de este sitio. De paso, el sitemap no
+    aparece modificado en git sin motivo.
+    """
+    previa = RAIZ / 'index.html'
+    mapa = RAIZ / 'sitemap.xml'
+    if previa.exists() and mapa.exists() and previa.read_text(encoding='utf-8') == pagina:
+        m = re.search(r'<lastmod>(\d{4}-\d{2}-\d{2})</lastmod>', mapa.read_text(encoding='utf-8'))
+        if m:
+            return m.group(1)
+    return hoy
+
+
+def escribir_sitemap_y_robots(base, fecha):
+    """Dos archivos de tres líneas: se escriben aquí mismo."""
+    (RAIZ / 'sitemap.xml').write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f'  <url><loc>{html.escape(base)}</loc><lastmod>{fecha}</lastmod></url>\n'
+        '</urlset>\n', encoding='utf-8')
+
+    robots = ['# Generado por scripts/generar.py: no editar a mano.']
+    if urlsplit(base).path not in ('', '/'):
+        # En github.io/montelago-web/ el robots.txt que leen los buscadores es el de la raíz
+        # del dominio (github.io/robots.txt), que no es nuestro. Éste no lo lee nadie.
+        robots += ['# OJO: la web vive en una subcarpeta y los buscadores sólo leen el robots.txt',
+                   '# de la raíz del dominio. Mientras siga así, el sitemap hay que darlo a mano',
+                   '# en Google Search Console. En el dominio propio este archivo sí cuenta.']
+    robots += ['User-agent: *', 'Allow: /', '', f'Sitemap: {base}sitemap.xml']
+    (RAIZ / 'robots.txt').write_text('\n'.join(robots) + '\n', encoding='utf-8')
+
+
+def foto_tarjeta(url, alt):
+    """El recuadro de la foto de una tarjeta, o nada si no hay foto.
+
+    Sin foto no se pinta: un <img src=""> es un icono roto en una página de venta, y el texto
+    de la tarjeta se sostiene solo."""
+    if not url:
+        return ''
+    return (f'<div class="tarjeta__foto"><img src="{esc(url)}" alt="{esc(alt)}"{dim(url)} '
+            'loading="lazy" decoding="async"></div>')
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -106,7 +246,8 @@ def main():
     if libres:
         cifras.append((str(len(libres)), 'disponibles hoy en la Etapa I'))
     if areas:
-        cifras.append((f'{round(min(areas))} m²', 'desde'))
+        # «desde» a secas, debajo de la cifra, se leía «243 m² desde» y no decía desde qué
+        cifras.append((f'{round(min(areas))} m²', 'el lote disponible más pequeño'))
 
     # --- Las tres etapas, con el texto oficial de los puntos del masterplan ---
     etapas = []
@@ -114,7 +255,11 @@ def main():
         h = next((x for x in mp['hotspots'] if x['id'] == hid), None)
         if not h:
             continue
-        clip = next((g for k, g in galeria.items() if k.startswith(h['label'])), None)
+        # La etiqueta tiene que aparecer como palabra entera: con startswith, «Etapa I» casaba
+        # con «Etapa II · …» y la Etapa I salía con la foto de la Etapa II. Así encuentra
+        # «La Etapa I desde arriba», que es la suya.
+        suya = re.compile(r'(?<!\w)' + re.escape(h['label']) + r'(?!\w)')
+        clip = next((g for k, g in galeria.items() if suya.search(k)), None)
         etapas.append({'label': h['label'], 'texto': h.get('shortText', ''),
                        'foto': img((clip or {}).get('posterUrl', ''))})
 
@@ -149,7 +294,7 @@ def main():
         logo = logo.rsplit('.', 1)[0] + '.webp'
 
     # --- Lo que necesitan los buscadores y las tarjetas de los enlaces ---
-    base = args.url if args.url.endswith('/') else args.url + '/'
+    base = normalizar_url(args.url)
     loc = p.get('location', {})
     ficha = {
         '@context': 'https://schema.org',
@@ -172,16 +317,8 @@ def main():
         ficha['additionalProperty'] = {'@type': 'PropertyValue', 'name': 'Promotora',
                                        'value': dev['name']}
 
-    # el sitemap y el robots son dos archivos de tres líneas: se escriben aquí mismo
-    hoy = date.today().isoformat()
-    (RAIZ / 'sitemap.xml').write_text(
-        '<?xml version="1.0" encoding="UTF-8"?>\n'
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
-        f'  <url><loc>{base}</loc><lastmod>{hoy}</lastmod>'
-        '<changefreq>monthly</changefreq><priority>1.0</priority></url>\n'
-        '</urlset>\n', encoding='utf-8')
-    (RAIZ / 'robots.txt').write_text(
-        'User-agent: *\nAllow: /\n\nSitemap: ' + base + 'sitemap.xml\n', encoding='utf-8')
+    # el sitemap y el robots se escriben DESPUÉS de armar la página: la fecha del sitemap
+    # depende de si la página cambió (ver lastmod)
 
     html_out = PLANTILLA.format(
         titulo=esc(proyecto.get('htmlTitle') or proyecto['name']),
@@ -195,7 +332,7 @@ def main():
             for v, t in cifras),
         etapas='\n'.join(
             f'''      <article class="tarjeta">
-        <div class="tarjeta__foto"><img src="{e['foto']}" alt="{esc(e['label'])}"{dim(e['foto'])} loading="lazy" decoding="async"></div>
+        {foto_tarjeta(e['foto'], e['label'])}
         <h3>{esc(e['label'])}</h3><p>{esc(e['texto'])}</p>
       </article>''' for e in etapas),
         plano_img=img((plano or {}).get('url', '')),
@@ -226,9 +363,14 @@ def main():
         dim_plano=dim(img((plano or {}).get('url', ''))),
         dim_mapa=dim(img((mapa or {}).get('url', ''))),
         og_img=esc(base + 'assets/img/tarjeta-og.jpg'),
-        jsonld=json.dumps(ficha, ensure_ascii=False, separators=(',', ':')),
+        jsonld=jsonld_seguro(ficha),
     )
+    fecha = lastmod(html_out, date.today().isoformat())   # antes de pisar el index.html viejo
     (RAIZ / 'index.html').write_text(html_out, encoding='utf-8')
+    escribir_sitemap_y_robots(base, fecha)
+    sincronizar_csp(html_out)
+    for r in faltan(html_out):
+        print(f'  AVISO  la página nombra {r} y no está en el disco')
     print(f'index.html generado · {len(etapas)} etapas · {len(amenidades)} áreas comunes · '
           f'{len(clips)} clips · {len(libres)} lotes disponibles de {len(lotes)}')
     print(f'sitemap.xml y robots.txt apuntando a {base}')
@@ -273,10 +415,11 @@ PLANTILLA = '''<!doctype html>
 <script type="application/ld+json">{jsonld}</script>
 
 <!-- Montserrat desde el propio sitio: la fuente de la marca, y la IP del visitante no viaja
-     a Google por leer una página. Las dos variantes que se ven de entrada van precargadas; el
-     crossorigin NO es opcional en una fuente, aunque sea del mismo sitio. -->
+     a Google por leer una página. Es una fuente variable: UN archivo trae los tres pesos, así
+     que se precarga uno solo. Antes iban dos precargas de dos copias idénticas, y el navegador
+     bajaba el mismo archivo dos y tres veces. El crossorigin NO es opcional en una fuente,
+     aunque sea del mismo sitio. -->
 <link rel="preload" as="font" type="font/woff2" href="assets/fuentes/montserrat-400-latin.woff2" crossorigin>
-<link rel="preload" as="font" type="font/woff2" href="assets/fuentes/montserrat-600-latin.woff2" crossorigin>
 <link rel="stylesheet" href="assets/fuentes/montserrat.css">
 
 <link rel="preload" as="image" href="{portada}" fetchpriority="high">
@@ -335,7 +478,10 @@ PLANTILLA = '''<!doctype html>
 
 <main id="contenido">
 
-<section class="seccion cifras" id="cifras">
+<section class="seccion cifras" id="cifras" aria-labelledby="cifras-titulo">
+  <!-- el título no se ve —las cifras se explican solas—, pero sin él la sección es un bloque
+       sin nombre para quien la recorre por encabezados con un lector de pantalla -->
+  <h2 class="oculto" id="cifras-titulo">Montelago en cifras</h2>
 {cifras}
 </section>
 
@@ -377,7 +523,7 @@ PLANTILLA = '''<!doctype html>
 </section>
 
 <section class="seccion cierre" id="contacto">
-  <h2>¿Quieres uno?</h2>
+  <h2>¿Te interesa un lote?</h2>
   <p>Escríbenos y te contamos qué lotes quedan, sus medidas y las formas de pago.</p>
 
   <!-- El formulario sólo aparece si hay JS, porque es JS quien arma el mensaje: un formulario

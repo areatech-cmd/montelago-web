@@ -35,6 +35,8 @@ if (quieto || !('IntersectionObserver' in window)) {
 const fijo = document.querySelector('.fija')
 const portada = document.querySelector('.portada')
 const barra = document.querySelector('.menu')
+const contacto = document.querySelector('#contacto')
+const videoPortada = document.querySelector('.portada__video')
 // cada enlace del menú con la sección a la que apunta, resuelto una sola vez
 const enlaces = [...document.querySelectorAll('.menu__lista a')]
   .map((a) => ({ a, seccion: document.querySelector(a.getAttribute('href')) }))
@@ -50,17 +52,37 @@ if (portada) {
   // puesto y nada se movía más. Son unas pocas lecturas por evento de scroll, sin escribir nada
   // entre medias: no hay reflujo que ahorrar.
   let activo = null
+  let pausadoPorScroll = false
   const decidir = () => {
     const enPortada = portada.getBoundingClientRect().bottom > innerHeight / 2
-    if (fijo) fijo.classList.toggle('fija--oculta', enPortada)   // en la portada ya hay un botón igual
+    // en el formulario tampoco hace falta: ahí está el botón de enviar, y el fijo tapaba los campos
+    const enContacto = contacto && contacto.getBoundingClientRect().top < innerHeight * 0.85
+    if (fijo) fijo.classList.toggle('fija--oculta', enPortada || !!enContacto)
     if (barra) barra.classList.toggle('menu--solido', !enPortada)
+
+    // El vídeo de la portada no tiene por qué seguir girando cuando nadie lo ve: en un móvil es
+    // batería y procesador gastados mientras se lee el resto. Se pausa al salir y sigue al volver.
+    // Sólo si ya arrancó (tiene la clase visible): antes de eso lo decide el bloque del vídeo.
+    // Sólo se reanuda lo que se pausó aquí: si el navegador no dejó reproducirlo, no se le
+    // insiste en cada evento de scroll.
+    if (videoPortada && videoPortada.isConnected && videoPortada.classList.contains('visible')) {
+      const fuera = portada.getBoundingClientRect().bottom <= 0
+      if (fuera && !videoPortada.paused) {
+        videoPortada.pause()
+        pausadoPorScroll = true
+      } else if (!fuera && pausadoPorScroll) {
+        pausadoPorScroll = false
+        videoPortada.play().catch(() => {})
+      }
+    }
 
     // el enlace marcado es el de la última sección que ya cruzó el primer tercio de la pantalla
     let cual = null
     for (const e of enlaces) if (e.seccion.getBoundingClientRect().top <= innerHeight * 0.35) cual = e
     if (cual !== activo) {
       if (activo) activo.a.removeAttribute('aria-current')
-      if (cual) cual.a.setAttribute('aria-current', 'true')
+      // «location» y no «true»: es lo que el lector de pantalla anuncia como «ubicación actual»
+      if (cual) cual.a.setAttribute('aria-current', 'location')
       activo = cual
     }
   }
@@ -77,7 +99,7 @@ if (portada) {
 // Antes esto trataba el 3G como si fuera 2G y dejaba sin vídeo a media Latinoamérica.
 //
 // Con ?foto=1 en la dirección se prueba el caso de sólo foto.
-const video = document.querySelector('.portada__video')
+const video = videoPortada
 if (video) {
   const con = navigator.connection || {}
   const muyLenta = /(^|-)2g$/.test(con.effectiveType || '')
@@ -87,8 +109,17 @@ if (video) {
   if (!soloFoto) {
     // El de 1080 sólo donde se va a notar y la conexión aguante. En un móvil, o con 3G, el de
     // 720 se ve igual y pesa la mitad.
-    const ancho = Math.max(innerWidth, (innerHeight * 16) / 9) * (devicePixelRatio || 1)
-    video.src = ancho > 1400 && !floja ? video.dataset['1080'] : video.dataset['720']
+    //
+    // Se mide en píxeles CSS, sin multiplicar por la densidad de la pantalla. Antes se
+    // multiplicaba, y un teléfono cualquiera (390 de ancho ×3) salía «más ancho» que un
+    // portátil: TODOS los móviles con 4G se bajaban los 7 MB, justo lo contrario de lo que
+    // dice el párrafo de arriba. En un recuadro de teléfono tras un velo, 720 basta.
+    const ancho = Math.max(innerWidth, innerHeight)
+    video.src = ancho >= 1024 && !floja ? video.dataset['1080'] : video.dataset['720']
+    // preload="none" está en el HTML para que no se baje nada antes de decidir; decidido ya,
+    // se pide entero. Algunos navegadores (Safari) respetan el none aun después de load() y
+    // nunca llegarían a «canplay».
+    video.preload = 'auto'
     video.addEventListener('canplay', () => {
       video.classList.add('visible')
       video.play().catch(() => {}) // si el navegador no deja reproducir solo, queda la foto
@@ -126,14 +157,23 @@ if (galeria) {
 
     video.addEventListener('play', () => pausarLasDemas(video))
     video.addEventListener('error', () => {
+      const devolverFoco = document.activeElement === video
       video.replaceWith(enlace)
+      if (devolverFoco) enlace.focus()
+      // si ya falló antes, no se apila un segundo aviso igual
+      if (enlace.nextElementSibling?.classList.contains('clip__fallo')) return
       const aviso = document.createElement('p')
       aviso.className = 'clip__fallo'
       aviso.textContent = 'Este clip no cargó. Se puede ver en el tour.'
       enlace.after(aviso)
     }, { once: true })
 
+    // El enlace que tenía el foco desaparece: sin esto, quien llegó con el teclado se queda con
+    // el foco en ninguna parte y tiene que empezar desde arriba. Se lo damos al vídeo, que con
+    // controles se maneja con espacio y flechas.
+    const teniaFoco = document.activeElement === enlace
     enlace.replaceWith(video)
+    if (teniaFoco) video.focus()
     pausarLasDemas(video)
     video.play().catch(() => {}) // el clic ya es permiso, pero si el navegador dice no, quedan los controles
   })
@@ -156,6 +196,14 @@ if (consulta) {
   const SALTO = String.fromCharCode(10)
   const dato = (n) => consulta.elements[n]
   const campoDe = (n) => dato(n).closest('.campo')
+
+  // Cada campo apunta a su mensaje de error con aria-describedby, para que el lector de pantalla
+  // lo lea al entrar en el campo y no sólo como parte de la etiqueta.
+  consulta.querySelectorAll('[data-error]').forEach((s) => {
+    s.id = 'error-' + s.dataset.error
+    s.setAttribute('aria-live', 'polite')
+    dato(s.dataset.error).setAttribute('aria-describedby', s.id)
+  })
 
   // El correo y el teléfono los valida el propio navegador por el type= del campo; lo único
   // nuestro es exigir que el teléfono tenga dígitos de verdad y el nombre, dos letras.
@@ -193,7 +241,8 @@ if (consulta) {
     if (malos.length) {
       const primero = dato(malos[0])
       primero.focus()
-      primero.scrollIntoView({ block: 'center', behavior: 'smooth' })
+      // el JS no hereda el scroll-behavior del CSS: quien pidió menos movimiento, salto directo
+      primero.scrollIntoView({ block: 'center', behavior: quieto ? 'auto' : 'smooth' })
       return
     }
     if (dato('web').value) return // lo llenó un robot: no se abre nada
@@ -212,8 +261,17 @@ if (consulta) {
     // window.open va AQUÍ, dentro del clic y antes de cualquier espera: si se retrasa, el
     // navegador lo toma por ventana emergente y lo bloquea. Es la misma razón por la que el
     // tour abre WhatsApp antes de guardar nada.
+    //
+    // SIN 'noopener' en el tercer argumento, y es a propósito. Con él, window.open devuelve
+    // SIEMPRE null —así lo dice el estándar—, aunque la ventana se haya abierto. El código de
+    // abajo lo leía como «bloqueada» y además saltaba al correo: la persona acababa con
+    // WhatsApp abierto en otra pestaña y su programa de correo encima. El aislamiento que daba
+    // noopener se consigue igual cortando el opener a mano.
     const wa = consulta.dataset.wa
-    const ventana = wa && window.open('https://wa.me/' + wa + '?text=' + encodeURIComponent(texto), '_blank', 'noopener')
+    const ventana = wa && window.open('https://wa.me/' + wa + '?text=' + encodeURIComponent(texto), '_blank')
+    if (ventana) {
+      try { ventana.opener = null } catch (e) { /* si no deja, tampoco pasa nada */ }
+    }
 
     if (!ventana) {
       // Sin WhatsApp —o con las ventanas bloqueadas— se va por correo, que no se puede bloquear.
@@ -227,9 +285,18 @@ if (consulta) {
       return
     }
 
-    const gracias = document.createElement('p')
-    gracias.className = 'consulta__gracias'
+    // Se reutiliza si ya está: quien envía dos veces no puede encontrarse con un error porque
+    // la nota que se reemplazaba la primera vez ya no existe. role=status para que el lector
+    // de pantalla anuncie que algo pasó, porque la pestaña nueva se abre fuera de su vista.
+    let gracias = consulta.querySelector('.consulta__gracias')
+    if (!gracias) {
+      gracias = document.createElement('p')
+      gracias.className = 'consulta__gracias'
+      gracias.setAttribute('role', 'status')
+      const nota = consulta.querySelector('.consulta__nota')
+      if (nota) nota.replaceWith(gracias)
+      else consulta.append(gracias)
+    }
     gracias.textContent = 'Abrimos tu mensaje en WhatsApp con los datos puestos. Sólo falta que lo envíes.'
-    consulta.querySelector('.consulta__nota').replaceWith(gracias)
   })
 }

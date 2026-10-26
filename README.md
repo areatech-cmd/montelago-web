@@ -20,7 +20,7 @@ assets/main.js         el único JS: aparecer al scroll, el botón fijo, el víd
                        la galería y el formulario
 assets/img/            renders oficiales copiados del tour (8 MB)
 assets/video/          la aérea de la portada (720 y 1080) y los 7 clips en 720 (16 MB)
-assets/fuentes/        Montserrat, servida desde aquí (3 pesos, 111 KB)
+assets/fuentes/        Montserrat variable: un archivo para los 3 pesos, 38 KB
 scripts/generar.py     arma index.html con los datos del tour
 scripts/traer_medios.py  copia imágenes y clips, y compone el icono y la tarjeta
 sitemap.xml, robots.txt  generados

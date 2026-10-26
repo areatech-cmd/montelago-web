@@ -1,3 +1,29 @@
+# Este repositorio es PÚBLICO y se publica entero: lo que entre aquí lo puede descargar
+# cualquiera, y aunque luego se borre se queda en el historial. Esta lista es la red de
+# seguridad para lo que no debe entrar nunca por descuido.
+
+# Python
 __pycache__/
 *.pyc
+
+# Lo que deja el sistema operativo
 .DS_Store
+Thumbs.db
+desktop.ini
+
+# El inventario y cualquier exportación de consultas: llevan nombres de clientes y asesoras,
+# y precios cash. Viven en el tour o en Administración, nunca aquí.
+*.xlsx
+*.xlsm
+*.xls
+*.csv
+~$*
+
+# Credenciales. Si algún día se activa la captura de consultas en Cloudflare
+# (docs/propuesta-captura-consultas.md), los secretos van en el panel o en .dev.vars para
+# probar en local, y .dev.vars NO se sube.
+.env
+.env.*
+.dev.vars
+.wrangler/
+node_modules/

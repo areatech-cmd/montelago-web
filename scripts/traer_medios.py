@@ -30,11 +30,23 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parent.parent
 BITRATE_1080 = '4000k'
 
+# Las imágenes sueltas de la galería del tour que esta página enseña: el plano y el mapa de
+# cómo llegar. generar.py las busca por estos mismos nombres; si se añade una aquí, hay que
+# pintarla allí, y al revés.
+IMAGENES_DE_GALERIA = ('masterplan-general', 'mapa-rutas')
+
+# Lo que se compone aquí y no viene tal cual del tour: no cuenta como sobrante.
+# (el logo en WebP también se compone, pero su nombre sale del del tour: se añade abajo)
+COMPUESTAS = {'tarjeta-og.jpg', 'icono-32.png', 'icono-180.png'}
+
 
 def ffmpeg(tour):
-    propio = tour / 'node_modules' / 'ffmpeg-static' / 'ffmpeg.exe'
-    if propio.exists():
-        return str(propio)
+    # ffmpeg-static deja «ffmpeg.exe» en Windows y «ffmpeg» a secas en Linux y Mac. Antes sólo
+    # se buscaba el .exe, y fuera de Windows se ignoraba el del tour aunque estuviera ahí.
+    for nombre in ('ffmpeg.exe', 'ffmpeg'):
+        propio = tour / 'node_modules' / 'ffmpeg-static' / nombre
+        if propio.is_file():
+            return str(propio)
     if shutil.which('ffmpeg'):
         return 'ffmpeg'
     raise SystemExit('No encuentro ffmpeg (ni el del tour ni uno en el PATH)')
@@ -55,16 +67,23 @@ def main():
     p = json.loads((publico / 'data' / 'project.json').read_text(encoding='utf-8'))
 
     # --- Imágenes: las que la página nombra, ni una más ---
-    quiero = [p['masterplan']['stops'][0]['posterUrl'], p['home']['logoImgUrl']]
+    # Tiene que ir a la par con lo que generar.py pinta. Antes se copiaban TODAS las fotos de
+    # cada área común y todas las imágenes sueltas de la galería, y la página sólo usa la
+    # primera de cada área, el plano general y el mapa: quedaban nueve archivos (3,5 MB) en un
+    # repositorio público que no salían en ninguna parte. El logo PNG tampoco se copia: la
+    # página usa el WebP que se compone más abajo, directamente desde el del tour.
+    quiero = [p['masterplan']['stops'][0]['posterUrl']]
     for g in p['gallery']['items']:
         if g.get('posterUrl'):
             quiero.append(g['posterUrl'])
-        if (g.get('url') or '').endswith('.webp'):
-            quiero.append(g['url'])
+        url = g.get('url') or ''
+        if url.endswith('.webp') and any(n in url for n in IMAGENES_DE_GALERIA):
+            quiero.append(url)
     for a in p['amenities']['items']:
-        for i in a.get('images', []):
-            if (i.get('url') or '').endswith('.webp'):
-                quiero.append(i['url'])
+        primera = next((i['url'] for i in a.get('images', [])
+                        if (i.get('url') or '').endswith('.webp')), None)
+        if primera:
+            quiero.append(primera)
 
     destino_img = RAIZ / 'assets' / 'img'
     destino_img.mkdir(parents=True, exist_ok=True)
@@ -115,8 +134,8 @@ def main():
               f'(de {grande.stat().st_size / 1048576:.0f} MB, recomprimido a {BITRATE_1080})')
 
     # --- La fuente de la marca, servida desde aquí ---
-    # Sin esto la página caía a la fuente del sistema y no se parecía a la marca. Se copian las
-    # cuatro variantes que esta página usa y SÓLO la subserie «latin»: cubre tildes, ñ, · y ²,
+    # Sin esto la página caía a la fuente del sistema y no se parecía a la marca. Se copian los
+    # tres pesos que esta página usa y SÓLO la subserie «latin»: cubre tildes, ñ, · y ²,
     # que es todo lo que hay en un texto en español. La «latin-ext» son 276 KB para alfabetos
     # que aquí no aparecen.
     #
@@ -129,18 +148,29 @@ def main():
     )
     fuentes = RAIZ / 'assets' / 'fuentes'
     fuentes.mkdir(parents=True, exist_ok=True)
-    reglas = []
+    # Las tres «variantes» que da Google para Montserrat son hoy el MISMO archivo, byte a byte:
+    # es una fuente variable y un solo archivo trae todos los pesos. Declararlas como tres
+    # archivos distintos hacía que el navegador bajara tres veces lo mismo (38 KB × 3). Así que
+    # se agrupan por contenido: los pesos que comparten archivo van en UNA regla con el rango
+    # de pesos, y sólo se copia ese archivo. Si algún día vuelven a ser estáticas y distintas,
+    # cada una sale con su regla, como antes.
+    grupos = {}   # contenido -> [pesos], en el orden en que aparecen
     for peso in (400, 600, 700):   # el 500 no lo usa nadie: son 37 KB que no se bajan
         src = publico / 'fonts' / f'montserrat-{peso}-latin.woff2'
         if not src.exists():
             print(f'  AVISO  falta la variante de {peso} de la fuente')
             continue
+        grupos.setdefault(src.read_bytes(), []).append((peso, src))
+    reglas = []
+    for pesos in grupos.values():
+        src = pesos[0][1]
         shutil.copy2(src, fuentes / src.name)
+        bajo, alto = pesos[0][0], pesos[-1][0]
         reglas.append(
             '@font-face {\n'
             "  font-family: 'Montserrat';\n"
             '  font-style: normal;\n'
-            f'  font-weight: {peso};\n'
+            f'  font-weight: {bajo if bajo == alto else f"{bajo} {alto}"};\n'
             '  font-display: swap;\n'
             f"  src: url(./{src.name}) format('woff2');\n"
             f'  unicode-range: {RANGO_LATIN};\n'
@@ -215,6 +245,19 @@ def main():
         copiados += 1
         peso_clips += src.stat().st_size
     print(f'clips de galería: {copiados} de {clips} · {peso_clips / 1048576:.1f} MB')
+
+    # --- Lo que sobra ---
+    # Este script no borra nada: un archivo borrado por un script es un susto. Pero sí avisa de
+    # lo que está en assets/img y ya no se usa, para quitarlo con git rm a sabiendas. Lo que se
+    # deja en el repositorio se publica, y se descarga entero en cada despliegue.
+    usadas = {Path(r).name for r in quiero} | COMPUESTAS
+    usadas.add(Path(p['home']['logoImgUrl']).stem + '.webp')
+    sobran = sorted(f for f in destino_img.iterdir() if f.is_file() and f.name not in usadas)
+    if sobran:
+        print(f'\n  {len(sobran)} imágenes en assets/img que la página ya no usa '
+              f'({sum(f.stat().st_size for f in sobran) / 1048576:.1f} MB):')
+        for f in sobran:
+            print(f'    git rm assets/img/{f.name}')
 
     print('\nAhora: python scripts/generar.py')
 

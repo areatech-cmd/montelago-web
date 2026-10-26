@@ -36,10 +36,11 @@
 <script type="application/ld+json">{"@context":"https://schema.org","@type":"Place","name":"Montelago Condominio Club","description":"Montelago es un condominio ecoamigable diseñado para brindar una experiencia de vida en contacto con la naturaleza, integrando espacios residenciales, recreativos y de bienestar en un entorno sostenible.","url":"https://areatech-cmd.github.io/montelago-web/","image":"https://areatech-cmd.github.io/montelago-web/assets/img/tarjeta-og.jpg","address":{"@type":"PostalAddress","streetAddress":"57FQ+J7, Sector La Calerita · distrito de Tumán, provincia de Chiclayo, Lambayeque","addressLocality":"Tumán","addressRegion":"Lambayeque","addressCountry":"PE"},"telephone":"+51 913 401 447","isicV4":"6810","geo":{"@type":"GeoCoordinates","latitude":-6.825972,"longitude":-79.711792},"additionalProperty":{"@type":"PropertyValue","name":"Promotora","value":"Villacasa Group S.A.C."}}</script>
 
 <!-- Montserrat desde el propio sitio: la fuente de la marca, y la IP del visitante no viaja
-     a Google por leer una página. Las dos variantes que se ven de entrada van precargadas; el
-     crossorigin NO es opcional en una fuente, aunque sea del mismo sitio. -->
+     a Google por leer una página. Es una fuente variable: UN archivo trae los tres pesos, así
+     que se precarga uno solo. Antes iban dos precargas de dos copias idénticas, y el navegador
+     bajaba el mismo archivo dos y tres veces. El crossorigin NO es opcional en una fuente,
+     aunque sea del mismo sitio. -->
 <link rel="preload" as="font" type="font/woff2" href="assets/fuentes/montserrat-400-latin.woff2" crossorigin>
-<link rel="preload" as="font" type="font/woff2" href="assets/fuentes/montserrat-600-latin.woff2" crossorigin>
 <link rel="stylesheet" href="assets/fuentes/montserrat.css">
 
 <link rel="preload" as="image" href="assets/img/poster.webp" fetchpriority="high">
@@ -98,18 +99,21 @@
 
 <main id="contenido">
 
-<section class="seccion cifras" id="cifras">
+<section class="seccion cifras" id="cifras" aria-labelledby="cifras-titulo">
+  <!-- el título no se ve —las cifras se explican solas—, pero sin él la sección es un bloque
+       sin nombre para quien la recorre por encabezados con un lector de pantalla -->
+  <h2 class="oculto" id="cifras-titulo">Montelago en cifras</h2>
       <div class="dato"><strong>3</strong><span>etapas</span></div>
       <div class="dato"><strong>342</strong><span>lotes al terminar</span></div>
       <div class="dato"><strong>68</strong><span>disponibles hoy en la Etapa I</span></div>
-      <div class="dato"><strong>243 m²</strong><span>desde</span></div>
+      <div class="dato"><strong>243 m²</strong><span>el lote disponible más pequeño</span></div>
 </section>
 
 <section class="seccion" id="etapas">
   <h2>El proyecto, en tres etapas</h2>
   <div class="rejilla">
       <article class="tarjeta">
-        <div class="tarjeta__foto"><img src="assets/img/etapa-2-poster.webp" alt="Etapa I" width="1920" height="1080" loading="lazy" decoding="async"></div>
+        <div class="tarjeta__foto"><img src="assets/img/cenital-poster.webp" alt="Etapa I" width="1920" height="1080" loading="lazy" decoding="async"></div>
         <h3>Etapa I</h3><p>Primera etapa: 116 lotes residenciales articulados alrededor de una laguna artificial como elemento paisajístico central, con espacios de contemplación, recreación y conexión con la naturaleza.</p>
       </article>
       <article class="tarjeta">
@@ -226,7 +230,7 @@
 </section>
 
 <section class="seccion cierre" id="contacto">
-  <h2>¿Quieres uno?</h2>
+  <h2>¿Te interesa un lote?</h2>
   <p>Escríbenos y te contamos qué lotes quedan, sus medidas y las formas de pago.</p>
 
   <!-- El formulario sólo aparece si hay JS, porque es JS quien arma el mensaje: un formulario

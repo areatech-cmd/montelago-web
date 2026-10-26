@@ -27,6 +27,7 @@ body {
 /* ---------- Portada ---------- */
 .portada {
   position: relative;
+  min-height: 100vh;   /* para los navegadores que todavía no entienden svh */
   min-height: 100svh;
   display: grid;
   place-items: center;
@@ -46,11 +47,21 @@ body {
 }
 .portada__centro { position: relative; max-width: 760px; text-align: center; color: var(--white); }
 .portada__logo { width: min(320px, 68vw); height: auto; }
+/* El logo oficial ya trae «CONDOMINIO CLUB» escrito debajo: el lema en texto, justo después,
+   se leía dos veces seguidas. Se oculta a la vista y también al lector de pantalla, porque el
+   texto alternativo del logo —que hace de h1— ya lo dice. Se deja en el HTML por si algún día
+   el logo llega sin lema: basta con quitar esta línea. */
+.tagline { display: none; }
 .tagline {
   margin: 10px 0 0; font-size: 13px; font-weight: 600;
   letter-spacing: .3em; text-transform: uppercase; opacity: .9;
 }
-.lead { margin: 22px auto 0; max-width: 56ch; font-size: clamp(15px, 1.9vw, 19px); }
+.lead {
+  margin: 22px auto 0; max-width: 56ch; font-size: clamp(15px, 1.9vw, 19px);
+  /* el velo es más claro justo a media altura, que es donde cae este párrafo; sobre las zonas
+     de arena de la aérea las letras blancas perdían contraste. Una sombra suave lo asegura. */
+  text-shadow: 0 1px 14px rgba(4, 38, 43, .7), 0 1px 2px rgba(4, 38, 43, .5);
+}
 
 /* ---------- Botones ---------- */
 .acciones { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 30px; }
@@ -68,7 +79,10 @@ body {
    pero quien tenga la letra del sistema grande, o el día que una etiqueta se alargue, sí. */
 .btn { max-width: 100%; text-align: center; }
 @media (max-width: 380px) { .btn { padding: 0 16px; font-size: 13.5px; } }
-.fija { max-width: calc(100vw - 28px); }
+/* El fijo NO se centra con left:50% a secas: un elemento fijo con left:50% sólo tiene la mitad
+   de la pantalla para crecer, y en un móvil de 390 px «Quiero información» se partía en dos
+   líneas. Se ancla a los dos bordes y se centra con margin:auto sobre su propio ancho. */
+.fija { width: max-content; max-width: calc(100vw - 28px); white-space: nowrap; }
 .btn--primario { background: var(--brand); color: var(--white); }
 
 /* ---------- Secciones ---------- */
@@ -86,9 +100,23 @@ body {
 }
 
 /* ---------- Cifras ---------- */
-.cifras { display: flex; flex-wrap: wrap; gap: clamp(20px, 5vw, 64px); justify-content: center; text-align: center; }
+/* Rejilla y no flex: con flex, en un móvil quedaban tres cifras arriba y una sola, huérfana,
+   debajo. Dos por fila en el teléfono y las cuatro en una fila desde la tableta. El relleno de
+   abajo es menor que el de las demás secciones: sumado al de arriba de «etapas» dejaba un
+   hueco en blanco de casi una pantalla entre las cifras y el primer título. */
+.cifras {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px 16px; text-align: center; padding-bottom: clamp(24px, 4vw, 48px);
+}
+@media (min-width: 700px) { .cifras { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .dato strong { display: block; font-size: clamp(30px, 5vw, 50px); font-weight: 700; color: var(--brand); line-height: 1.05; }
-.dato span { display: block; margin-top: 4px; color: var(--muted); font-size: 13px; }
+.dato span { display: block; margin-top: 4px; color: var(--muted); font-size: 13px; line-height: 1.4; }
+
+/* Para lo que tiene que estar para el lector de pantalla pero no a la vista */
+.oculto {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+  clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+}
 
 /* ---------- Tarjetas ---------- */
 /* El min(...,100%) no es adorno: con minmax(270px,...) a secas, en una pantalla de 320 px
@@ -110,14 +138,17 @@ body {
 
 /* La reserva, siempre a mano */
 .fija {
-  position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom));
-  transform: translateX(-50%); z-index: 10;
+  position: fixed; left: 0; right: 0; margin: 0 auto; bottom: calc(16px + env(safe-area-inset-bottom));
+  z-index: 10;
 }
-.fija:hover { transform: translateX(-50%) translateY(-1px); }
+.fija:hover { transform: translateY(-1px); }
 /* Mientras se ve la portada no hace falta: ahí ya hay un botón igual. La clase la pone el JS,
    así que sin JS el botón se ve siempre, que es el lado seguro. */
-.fija--oculta { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(12px); }
-.fija { transition: opacity .35s var(--ease), transform .35s var(--ease); }
+/* También se esconde al llegar al formulario: ahí ya está el botón de enviar, y en el móvil
+   el fijo tapaba justo los campos que se están llenando. visibility además de opacity, para
+   que el teclado no se pare en un botón que no se ve. */
+.fija--oculta { opacity: 0; visibility: hidden; pointer-events: none; transform: translateY(12px); }
+.fija { transition: opacity .35s var(--ease), transform .35s var(--ease), visibility .35s; }
 @media (prefers-reduced-motion: reduce) { .fija { transition: none; } }
 
 /* ---------- Galería de clips ---------- */
@@ -161,14 +192,16 @@ body {
 .campo > span em { font-style: normal; font-weight: 400; color: var(--muted); }
 .campo input, .campo select, .campo textarea {
   width: 100%; min-height: 46px; padding: 11px 13px;
-  border: 1px solid #cfdcdd; border-radius: 10px;
+  /* el borde es lo único que dice «aquí se escribe»: necesita 3:1 contra el blanco (WCAG
+     1.4.11). El gris verdoso de antes daba 1,4:1 y en el sol de un móvil el campo no se veía. */
+  border: 1px solid #7d9598; border-radius: 10px;
   background: var(--white); color: var(--ink);
   font-family: inherit; font-size: 15px;
   transition: border-color .2s, box-shadow .2s;
 }
 .campo textarea { min-height: 88px; resize: vertical; line-height: 1.5; }
 .campo input:focus, .campo select:focus, .campo textarea:focus {
-  outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(4, 64, 72, .14);
+  outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(4, 64, 72, .3);
 }
 .campo small { display: none; margin-top: 5px; font-size: 12.5px; color: #b4442e; }
 /* el error se enseña sólo cuando hay algo que decir */

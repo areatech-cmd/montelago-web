@@ -1,3 +1,7 @@
+# Generado por scripts/generar.py: no editar a mano.
+# OJO: la web vive en una subcarpeta y los buscadores sólo leen el robots.txt
+# de la raíz del dominio. Mientras siga así, el sitemap hay que darlo a mano
+# en Google Search Console. En el dominio propio este archivo sí cuenta.
 User-agent: *
 Allow: /
 
